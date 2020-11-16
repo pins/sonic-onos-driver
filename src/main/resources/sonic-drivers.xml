@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright 2020-present Open Networking Foundation
+  ~ SPDX-License-Identifier: Apache-2.0
+  -->
+<drivers>
+    <driver name="sonic" manufacturer="Open Networking Foundation"
+            hwVersion="master" swVersion="Sonic" extends="p4runtime">
+        <behaviour api="org.onosproject.net.behaviour.PiPipelineProgrammable"
+                   impl="org.onosproject.drivers.sonic.SonicPipelineProgrammable"/>
+    </driver>
+</drivers>

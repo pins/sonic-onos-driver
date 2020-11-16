@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright 2020-present Open Networking Foundation
+  ~ SPDX-License-Identifier: Apache-2.0
+  -->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.onosproject</groupId>
+        <artifactId>onos-dependencies</artifactId>
+        <version>2.2.6</version>
+    </parent>
+
+    <groupId>org.onosproject.drivers</groupId>
+    <artifactId>sonic</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+    <packaging>bundle</packaging>
+
+    <description>SONiC/PINS Driver</description>
+    <url>https://opennetworking.org/</url>
+
+    <properties>
+        <onos.app.name>org.onosproject.drivers.sonic</onos.app.name>
+        <onos.app.title>SONiC/PINS Driver</onos.app.title>
+        <onos.app.origin>https://opennetworking.org/</onos.app.origin>
+        <onos.app.category>Drivers</onos.app.category>
+        <onos.app.url>https://opennetworking.org/</onos.app.url>
+        <onos.app.readme>
+            Adds support for SONiC/PINS-based devices
+        </onos.app.readme>
+        <onos.app.requires>
+            org.onosproject.drivers.p4runtime
+        </onos.app.requires>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.onosproject</groupId>
+            <artifactId>onos-api</artifactId>
+            <version>${onos.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.onosproject</groupId>
+            <artifactId>onos-drivers-p4runtime</artifactId>
+            <version>${onos.version}</version>
+            <scope>provided</scope>
+        </dependency>
+    </dependencies>
+
+    <repositories>
+        <repository>
+            <id>central</id>
+            <name>Central Repository</name>
+            <url>https://repo.maven.apache.org/maven2</url>
+            <layout>default</layout>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+            <releases>
+                <enabled>true</enabled>
+                <updatePolicy>always</updatePolicy>
+                <checksumPolicy>fail</checksumPolicy>
+            </releases>
+        </repository>
+        <repository>
+            <id>snapshots</id>
+            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+            <snapshots>
+                <enabled>true</enabled>
+                <updatePolicy>always</updatePolicy>
+                <checksumPolicy>fail</checksumPolicy>
+            </snapshots>
+        </repository>
+    </repositories>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.onosproject</groupId>
+                <artifactId>onos-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+</project>
