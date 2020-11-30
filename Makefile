@@ -11,6 +11,9 @@ curr_dir_sha := $(shell echo -n "$(curr_dir)" | shasum | cut -c1-7)
 
 mvn_build_container_name := mvn-build-${curr_dir_sha}
 
+local_build:
+	mvn clean install
+
 build: _create_mvn_container _mvn_package
 	$(info *** ONOS app .oar package created succesfully)
 	@ls -1 ./target/*.oar
