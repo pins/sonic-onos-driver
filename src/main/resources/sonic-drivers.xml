@@ -8,5 +8,7 @@
             hwVersion="master" swVersion="Sonic" extends="p4runtime">
         <behaviour api="org.onosproject.net.behaviour.PiPipelineProgrammable"
                    impl="org.onosproject.drivers.sonic.SonicPipelineProgrammable"/>
+        <property name="supportTableCounters">false</property>
+        <property name="tableReadCountersWithTableEntries">false</property>
     </driver>
 </drivers>
