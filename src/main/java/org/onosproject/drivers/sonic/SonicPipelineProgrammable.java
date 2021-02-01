@@ -27,6 +27,6 @@ public class SonicPipelineProgrammable
     @Override
     public ByteBuffer createDeviceDataBuffer(PiPipeconf pipeconf) {
         // No pipeline binary needed
-        return ByteBuffer.allocate(1);
+        return ByteBuffer.allocate(0);
     }
 }
