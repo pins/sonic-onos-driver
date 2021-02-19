@@ -11,5 +11,6 @@
         <property name="supportTableCounters">false</property>
         <property name="tableReadCountersWithTableEntries">false</property>
         <property name="tableWildcardReads">true</property>
+        <property name="supportDefaultTableEntry">false</property>
     </driver>
 </drivers>
