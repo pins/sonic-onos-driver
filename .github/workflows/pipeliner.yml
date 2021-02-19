@@ -1,0 +1,33 @@
+name: "build"
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'pipeliner/**'
+  pull_request:
+    paths:
+      - 'pipeliner/**'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          token: ${{ secrets.ACCESS_TOKEN }}
+          submodules: true
+
+      - name: Deps
+        run: cd pipeliner && make deps
+
+      - name: Build sai.p4 program with BMv2 P4C (in Docker)
+        run: cd pipeliner && make build-sai-p4
+
+      - name: Set up JDK 11
+        uses: actions/setup-java@v1
+        with:
+          java-version: 11
+
+      - name: Build SAI ONOS Pipeliner
+        run: cd pipeliner && make local_build
