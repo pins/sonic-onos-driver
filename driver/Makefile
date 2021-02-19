@@ -8,6 +8,8 @@ curr_dir_sha := $(shell echo -n "$(curr_dir)" | shasum | cut -c1-7)
 
 mvn_build_container_name := mvn-build-${curr_dir_sha}
 
+.PHONY: local_build build _create_mvn_container _mvn_package clean
+
 local_build:
 	mvn clean install
 

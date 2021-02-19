@@ -36,7 +36,7 @@ clean_pipeliner:
 
 local_build: driver/target/sonic-${DRIVER_VERSION}.oar driver/target/sai-${PIPELINER_VERSION}.oar
 
-build: build_driver build_pipeliner
+build: build_driver build_pipelinermake l
 
 clean: clean_driver clean_pipeliner
 	rm -r onos-tools
