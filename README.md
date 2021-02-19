@@ -1,11 +1,14 @@
 # sonic-onos-driver
-Driver for PINS/SONiC in ONOS
+Driver and pipeliner for PINS/SONiC in ONOS
 
-## Build app
-Run `make build`
+## Build driver
+Run `make build_driver`
 
-## Push driver app to a running ONOS instance
-`make push-app ONOS_IP=<ip-onos-instance>`
+## Build pipeliner
+Run `make build_pipeliner`
 
-ONOS_IP default value is `localhost`
+## Push driver or pipeliner app to a running ONOS instance
+`make {push_driver|push_pipeliner} [ONOS_IP=<ip-onos-instance>]`
+
+ONOS_IP default value is `localhost`.
 
