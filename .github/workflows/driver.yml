@@ -10,7 +10,7 @@ on:
       - 'driver/**'
 
 jobs:
-  build:
+  build-driver:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2

@@ -10,7 +10,7 @@ on:
       - 'pipeliner/**'
 
 jobs:
-  build:
+  build-pipeliner:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
