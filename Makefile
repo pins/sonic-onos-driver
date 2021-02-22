@@ -23,10 +23,10 @@ local_build_pipeliner driver/target/sai-0.1.0-SNAPSHOT.oar:
 	cd ./pipeliner && make local_build
 
 build_driver:
-	cd ./driver && make local_build
+	cd ./driver && make build
 
 build_pipeliner:
-	cd ./pipeliner && make local_build
+	cd ./pipeliner && make build
 
 clean_driver:
 	cd ./driver && make clean
@@ -36,7 +36,7 @@ clean_pipeliner:
 
 local_build: driver/target/sonic-${DRIVER_VERSION}.oar driver/target/sai-${PIPELINER_VERSION}.oar
 
-build: build_driver build_pipelinermake l
+build: build_driver build_pipeliner
 
 clean: clean_driver clean_pipeliner
 	rm -r onos-tools
@@ -47,8 +47,8 @@ onos-tools:
 	rm onos-admin-2.5.0.tar.gz
 	mv onos-admin-2.5.0 onos-tools
 
-push_driver: driver/target/sonic-0.1.0-SNAPSHOT.oar onos-tools
+push_driver: driver/target/sonic-${DRIVER_VERSION}.oar onos-tools
 	onos-tools/onos-app ${ONOS_IP} reinstall! driver/target/sonic-${DRIVER_VERSION}.oar
 
-push_pipeliner: pipeliner/target/sai-0.1.0-SNAPSHOT.oar onos-tools
+push_pipeliner: pipeliner/target/sai-${PIPELINER_VERSION}.oar onos-tools
 	onos-tools/onos-app ${ONOS_IP} reinstall! pipeliner/target/sai-${PIPELINER_VERSION}.oar

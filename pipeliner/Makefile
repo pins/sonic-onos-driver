@@ -36,7 +36,7 @@ build: src/main/resources/p4info.txt src/main/resources/bmv2.json _create_mvn_co
 # Reuse the same container to persist mvn repo cache.
 _create_mvn_container:
 	@if ! docker container ls -a --format '{{.Names}}' | grep -q ${mvn_build_container_name} ; then \
-		docker createcd  -v ${curr_dir}:/mvn-src -w /mvn-src  --user "$(id -u):$(id -g)" --name ${mvn_build_container_name} ${maven_img} mvn clean install; \
+		docker create -v ${curr_dir}:/mvn-src -w /mvn-src  --user "$(id -u):$(id -g)" --name ${mvn_build_container_name} ${maven_img} mvn clean install; \
 	fi
 
 _mvn_package:
@@ -52,7 +52,7 @@ build-sai-p4 src/main/resources/p4info.txt src/main/resources/bmv2.json:
 		--pp /p4src/p4c-out/_pp.p4 -o /p4src/p4c-out/bmv2.json \
 		--p4runtime-files /p4src/p4c-out/p4info.txt \
 		/p4src/instantiations/google/middleblock.p4
-	@echo "*** sai-main.p4 compiled successfully. Files available in p4src/p4c-out"
+	@echo "*** google/middleblock.p4 compiled successfully. Files available in src/main/resources"
 
 graphs-sai-p4:
 	$(info *** Building sai-main.p4 graphs)
@@ -66,7 +66,7 @@ graphs-sai-p4:
 		docker run --rm -w ${P4C_OUT_DIR} -v ${P4C_OUT_DIR}:${P4C_OUT_DIR} ${P4C_IMG} \
 			dot -Tpdf $${f} > $${f}.pdf; rm -f $${f}; \
 	done
-	@echo "*** sai-main.p4 graphs available in p4src/p4c-out/graphs"
+	@echo "*** google/middleblock.p4 graphs available in src/main/resources/graphs"
 
 clean:
 	@-docker rm ${mvn_build_container_name} > /dev/null
