@@ -50,7 +50,7 @@ import static org.onosproject.pipelines.sai.SaiPipelineUtils.criterionNotNull;
 public class ForwardingObjectiveTranslator
         extends AbstractObjectiveTranslator<ForwardingObjective> {
 
-    // FIXME: check with the new ACL from google sai
+    // FIXME: check with the new ACL from google sai. Currently we do not support ACL.
     private static final Set<Criterion.Type> PUNT_CRITERIA = ImmutableSet.of(
             Criterion.Type.IN_PORT,
             Criterion.Type.IN_PHY_PORT,
@@ -94,7 +94,6 @@ public class ForwardingObjectiveTranslator
 
     @Override
     public ObjectiveTranslation doTranslate(ForwardingObjective obj) throws SaiPipelinerException {
-        log.warn("FWDTranslator DOTRANSLATE!");
         final ObjectiveTranslation.Builder resultBuilder =
                 ObjectiveTranslation.builder();
         switch (obj.flag()) {
@@ -179,8 +178,8 @@ public class ForwardingObjectiveTranslator
             throws SaiPipelinerException {
         // IpCriterion won't be translated correctly by PiFlowRuleTranslator
         // because CRITERION_MAP in SaiInterpreter has different translation for IPV4/6_DST criterion
-        // TODO (daniele): Here we should set the default VRF in the set_vrf_table.
-        //  is that needed in SONiC or it's supposed to be already in default VRF?
+        // TODO (daniele): should we set the vrf_id in the acl_lookup_table table?
+        //  is the default VRF supposed to be default value?
         final TrafficSelector selector = DefaultTrafficSelector.builder()
                 .matchPi(PiCriterion.builder()
                                  .matchExact(SaiConstants.HDR_VRF_ID,
@@ -197,7 +196,6 @@ public class ForwardingObjectiveTranslator
         //  However, the type of forwarding is selected in the NextObjective.
         //  For now, we always use WCMP and if the forwarding is SIMPLE we add a single ActionProfileMember.
 
-        // FIXME: CURRENTLY ONLY SUPPORTING SIMPLE FORWARDING.
         final PiAction action = PiAction.builder()
                 .withId(SaiConstants.INGRESS_ROUTING_SET_WCMP_GROUP_ID)
                 .withParameter(nextIdParam)

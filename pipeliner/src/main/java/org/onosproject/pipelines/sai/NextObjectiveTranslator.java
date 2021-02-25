@@ -107,23 +107,26 @@ public class NextObjectiveTranslator
             final String routerInterfaceId = outPort.name();
             // Neighbor ID should be the IPv6 LL address of the destination (calculated from the dst MAC)
             final String neighborId = Ip6Address.valueOf(getLinkLocalAddress(dstMac.toBytes())).toString();
+            // TODO (daniele): Find something more meaningful than concat for nextHopId
+            final String nextHopId = neighborId + "@" + routerInterfaceId;
 
-            buildRouterInterfaceEntry(routerInterfaceId, outPort, srcMac, obj, routerInterfaceEntries);
-            buildNeighbourEntry(routerInterfaceId, neighborId, dstMac, obj, neighborEntries);
-
-            // Create Next Hop Entry
-            // TODO (daniele): Find something more meaningful than concat
-            String nextHopId = neighborId + routerInterfaceId;
-            // TODO (daniele): I could do similarly to what is done in the selectGroup method
-            //  for each treatment in the NextObjective convert it to PI...
-            //  Or simply for every treatment push a flowrule in the result builder
-            //  as a the end of the method
-            buildNextHopEntry(routerInterfaceId, neighborId, nextHopId, obj, nextHopEntries);
+            routerInterfaceEntries.add(buildRouterInterfaceEntry(routerInterfaceId, outPort, srcMac, obj));
+            neighborEntries.add(buildNeighbourEntry(routerInterfaceId, neighborId, dstMac, obj));
+            nextHopEntries.add(buildNextHopEntry(routerInterfaceId, neighborId, nextHopId, obj));
 
             // Map treatment to PiActionProfileAction
+            // TODO (daniele): modify weight when WCMP is supported
             builderActProfActSet.addActionProfileAction(
                     mapNextHashedTreatment(routerInterfaceId, neighborId), 1);
         }
+        if (isGroupModifyOp(obj)) {
+            // TODO (daniele): for group modify we have to modify the flow rule
+            //  in the WCMP table adding the new bucket or modifying weight of
+            //  the others.
+            log.error("Group Modify Operation is not supported yet");
+            return;
+        }
+        // Create the WCMP group table entry.
         final TrafficSelector selector = nextIdSelector(obj.id());
         final TrafficTreatment treatment = DefaultTrafficTreatment.builder()
                 .piTableAction(builderActProfActSet.build())
@@ -132,6 +135,10 @@ public class NextObjectiveTranslator
                 obj, SaiConstants.INGRESS_ROUTING_WCMP_GROUP_TABLE,
                 selector, treatment);
 
+        // TODO (daniele): probably in the future we could push everything together
+        //  and the P4RT server will figure out dependencies between rules.
+        // Rules have dependencies between them, P4RT server, for now, expects
+        // rules to be added and removed with a certain order.
         switch (obj.op()) {
             case REMOVE:
             case REMOVE_FROM_EXISTING:
@@ -144,8 +151,8 @@ public class NextObjectiveTranslator
                 resultBuilder.addFlowRules(routerInterfaceEntries);
                 break;
             case ADD:
+            case MODIFY:
             case ADD_TO_EXISTING:
-            default:
                 resultBuilder.addFlowRules(routerInterfaceEntries);
                 resultBuilder.newStage();
                 resultBuilder.addFlowRules(neighborEntries);
@@ -153,15 +160,18 @@ public class NextObjectiveTranslator
                 resultBuilder.addFlowRules(nextHopEntries);
                 resultBuilder.newStage();
                 resultBuilder.addFlowRule(wcmpFlowRule);
+                break;
+            default:
+                log.error("Unsuppored NextObjective operation: {}", obj.op());
+                return;
         }
         resultBuilder.newStage();
     }
 
-    private void buildNextHopEntry(String routerInterfaceId,
-                                   String neighborId,
-                                   String nextHopId,
-                                   NextObjective obj,
-                                   List<FlowRule> flowRules)
+    private FlowRule buildNextHopEntry(String routerInterfaceId,
+                                       String neighborId,
+                                       String nextHopId,
+                                       NextObjective obj)
             throws SaiPipelinerException {
         final PiCriterion routerInterfaceIdCriterion = PiCriterion.builder()
                 .matchExact(SaiConstants.HDR_NEXTHOP_ID, nextHopId.getBytes())
@@ -181,16 +191,13 @@ public class NextObjectiveTranslator
                                 .withParameters(actionParams)
                                 .build())
                 .build();
-        flowRules.add(flowRule(
-                obj, SaiConstants.INGRESS_ROUTING_NEXTHOP_TABLE,
-                selector, treatment));
+        return flowRule(obj, SaiConstants.INGRESS_ROUTING_NEXTHOP_TABLE, selector, treatment);
     }
 
-    private void buildRouterInterfaceEntry(String routerInterfaceId,
-                                           PortNumber outputPort,
-                                           MacAddress srcMac,
-                                           NextObjective obj,
-                                           List<FlowRule> flowRules)
+    private FlowRule buildRouterInterfaceEntry(String routerInterfaceId,
+                                               PortNumber outputPort,
+                                               MacAddress srcMac,
+                                               NextObjective obj)
             throws SaiPipelinerException {
 
         final PiCriterion routerInterfaceIdCriterion = PiCriterion.builder()
@@ -211,16 +218,15 @@ public class NextObjectiveTranslator
                                 .withParameters(actionParams)
                                 .build())
                 .build();
-        flowRules.add(flowRule(
+        return flowRule(
                 obj, SaiConstants.INGRESS_ROUTING_ROUTER_INTERFACE_TABLE,
-                selector, treatment));
+                selector, treatment);
     }
 
-    private void buildNeighbourEntry(String routerInterfaceId,
-                                     String neighborId,
-                                     MacAddress dstMac,
-                                     NextObjective obj,
-                                     List<FlowRule> flowRules)
+    private FlowRule buildNeighbourEntry(String routerInterfaceId,
+                                         String neighborId,
+                                         MacAddress dstMac,
+                                         NextObjective obj)
             throws SaiPipelinerException {
         final PiCriterion routerInterfaceIdCriterion = PiCriterion.builder()
                 .matchExact(SaiConstants.HDR_ROUTER_INTERFACE_ID, routerInterfaceId.getBytes())
@@ -237,8 +243,7 @@ public class NextObjectiveTranslator
                                         SaiConstants.DST_MAC, dstMac.toBytes()))
                                 .build())
                 .build();
-        flowRules.add(flowRule(
-                obj, SaiConstants.INGRESS_ROUTING_NEIGHBOR_TABLE, selector, treatment));
+        return flowRule(obj, SaiConstants.INGRESS_ROUTING_NEIGHBOR_TABLE, selector, treatment);
     }
 
     private TrafficSelector nextIdSelector(int nextId) {
@@ -252,42 +257,6 @@ public class NextObjectiveTranslator
         return DefaultTrafficSelector.builder()
                 .matchPi(nextIdCriterion);
     }
-
-//    private int selectGroup(NextObjective obj,
-//                            ObjectiveTranslation.Builder resultBuilder)
-//            throws SaiPipelinerException {
-//
-//        final PiTableId hashedTableId = SaiConstants.INGRESS_ROUTING_WCMP_GROUP_TABLE;
-//        final List<DefaultNextTreatment> defaultNextTreatments =
-//                defaultNextTreatments(obj.nextTreatments(), true);
-//        final List<TrafficTreatment> piTreatments = Lists.newArrayList();
-//
-//        for (DefaultNextTreatment t : defaultNextTreatments) {
-//            // Map treatment to PI
-//            piTreatments.add(mapTreatmentToPiIfNeeded(t.treatment(), hashedTableId));
-//        }
-//
-//        // TODO (daniele): here for WCMP we could insert the weight
-//        final List<GroupBucket> bucketList = piTreatments.stream()
-//                .map(DefaultGroupBucket::createSelectGroupBucket)
-//                .collect(Collectors.toList());
-//
-//        final int groupId = obj.id();
-//        final PiGroupKey groupKey = new PiGroupKey(
-//                hashedTableId,
-//                SaiConstants.INGRESS_ROUTING_WCMP_GROUP_SELECTOR,
-//                groupId);
-//
-//        resultBuilder.addGroup(new DefaultGroupDescription(
-//                deviceId,
-//                GroupDescription.Type.SELECT,
-//                new GroupBuckets(bucketList),
-//                groupKey,
-//                groupId,
-//                obj.appId()));
-//
-//        return groupId;
-//    }
 
     private List<DefaultNextTreatment> defaultNextTreatments(
             Collection<NextTreatment> nextTreatments, boolean strict)

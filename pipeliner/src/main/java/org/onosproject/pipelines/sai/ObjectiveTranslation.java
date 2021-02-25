@@ -47,6 +47,11 @@ final class ObjectiveTranslation {
         return flowRuleListBuilder.build();
     }
 
+    /**
+     * Returns all the translation stages with the corresponding flow rules.
+     *
+     * @return translation stages
+     */
     ImmutableList<ImmutableSet<FlowRule>> stages() {
         return flowRulesStages;
     }

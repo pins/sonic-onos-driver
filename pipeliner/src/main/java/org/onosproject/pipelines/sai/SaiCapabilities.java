@@ -14,7 +14,8 @@ import static org.slf4j.LoggerFactory.getLogger;
 /**
  * Representation of the capabilities of a given SAI pipeconf.
  */
-//FIXME: is the capabilities helper needed for SAI?
+//FIXME (daniele): this is needed when we introduce multiple SAI programs with
+// L2/L3/custom functionalities.
 public class SaiCapabilities {
 
     private final Logger log = getLogger(getClass());

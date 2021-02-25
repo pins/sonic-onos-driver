@@ -29,7 +29,6 @@ import org.onosproject.net.flowobjective.NextObjective;
 import org.onosproject.net.flowobjective.NextTreatment;
 import org.onosproject.net.flowobjective.Objective;
 import org.onosproject.net.flowobjective.ObjectiveError;
-import org.onosproject.net.group.GroupDescription;
 import org.onosproject.net.group.GroupService;
 import org.onosproject.store.serializers.KryoNamespaces;
 import org.slf4j.Logger;
@@ -141,6 +140,7 @@ public class SaiPipeliner extends AbstractHandlerBehaviour implements Pipeliner 
             switch (objective.op()) {
                 case ADD:
                 case ADD_TO_EXISTING:
+                case MODIFY:
                     listFlowRules.forEach(ops::add);
                     break;
                 case REMOVE:
@@ -154,44 +154,6 @@ public class SaiPipeliner extends AbstractHandlerBehaviour implements Pipeliner 
             ops.newStage();
         }
         flowRuleService.apply(ops.build());
-    }
-
-    private void processGroups(Objective objective, Collection<GroupDescription> groups) {
-        if (groups.isEmpty()) {
-            return;
-        }
-        switch (objective.op()) {
-            case ADD:
-                groups.forEach(groupService::addGroup);
-                break;
-            case REMOVE:
-                groups.forEach(group -> groupService.removeGroup(
-                        deviceId, group.appCookie(), objective.appId()));
-                break;
-            case ADD_TO_EXISTING:
-                groups.forEach(group -> groupService.addBucketsToGroup(
-                        deviceId, group.appCookie(), group.buckets(),
-                        group.appCookie(), group.appId())
-                );
-                break;
-            case REMOVE_FROM_EXISTING:
-                groups.forEach(group -> groupService.removeBucketsFromGroup(
-                        deviceId, group.appCookie(), group.buckets(),
-                        group.appCookie(), group.appId())
-                );
-                break;
-            case MODIFY:
-                // Modify is only supported for simple next objective
-                // Replace group bucket directly
-                // TODO (daniele): check if this is supported
-                groups.forEach(group -> groupService.setBucketsForGroup(
-                        deviceId, group.appCookie(), group.buckets(),
-                        group.appCookie(), group.appId())
-                );
-                break;
-            default:
-                log.warn("Unsupported Objective operation {}", objective.op());
-        }
     }
 
     private void handleNextGroup(NextObjective obj) {
@@ -214,7 +176,7 @@ public class SaiPipeliner extends AbstractHandlerBehaviour implements Pipeliner 
     private void removeNextGroup(NextObjective obj) {
         final NextGroup removed = flowObjectiveStore.removeNextGroup(obj.id());
         if (removed == null) {
-            log.debug("NextGroup {} was not found in FlowObjectiveStore");
+            log.debug("NextGroup {} was not found in FlowObjectiveStore", obj.id());
         }
     }
     private void putNextGroup(NextObjective obj) {

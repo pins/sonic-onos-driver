@@ -15,6 +15,7 @@ import org.onosproject.net.pi.model.PiTableId;
 /**
  * Constants for SAI pipeline.
  */
+// TODO (daniele): autogenerate from P4 program.
 public final class SaiConstants {
 
     // hide default constructor

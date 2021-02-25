@@ -72,6 +72,7 @@ public class SaiInterpreter extends AbstractHandlerBehaviour implements PiPipeli
                     .put(Criterion.Type.TCP_DST, HDR_L4_DST_PORT)
                     //.put(Criterion.Type.ARP_TPA, HDR_ARP_TPA)
                     .build();
+    public static final byte ZERO_BIT = (byte) 0b0;
 
     public SaiInterpreter() {
         super();
@@ -97,7 +98,7 @@ public class SaiInterpreter extends AbstractHandlerBehaviour implements PiPipeli
         DeviceId deviceId = packet.sendThrough();
         TrafficTreatment treatment = packet.treatment();
 
-        // sai.p4 supports only OUTPUT instructions.
+        // Supports only OUTPUT instructions.
         List<Instructions.OutputInstruction> outInstructions = treatment
                 .allInstructions()
                 .stream()
@@ -133,7 +134,7 @@ public class SaiInterpreter extends AbstractHandlerBehaviour implements PiPipeli
     public InboundPacket mapInboundPacket(PiPacketOperation packetIn, DeviceId deviceId)
             throws PiInterpreterException {
         // Assuming that the packet is ethernet, which is fine since sai.p4
-        // can deparse only ethernet packets.
+        // can de-parse only ethernet packets.
         Ethernet ethPkt;
         try {
             ethPkt = Ethernet.deserializer().deserialize(packetIn.data().asArray(), 0,
@@ -148,7 +149,7 @@ public class SaiInterpreter extends AbstractHandlerBehaviour implements PiPipeli
                 .findFirst();
 
         if (packetMetadata.isPresent()) {
-            // TODO (daniele) Get the port name via DeviceService?
+            // TODO (daniele): Get the port name via DeviceService?
             ImmutableByteSequence portByteSequence = packetMetadata.get().value();
             short s = portByteSequence.asReadOnlyBuffer().getShort();
             ConnectPoint receivedFrom = new ConnectPoint(deviceId, PortNumber.portNumber(s));
@@ -184,11 +185,11 @@ public class SaiInterpreter extends AbstractHandlerBehaviour implements PiPipeli
                     // FIXME: should submit to ingress or directly output to port
                     PiPacketMetadata.builder()
                             .withId(SUBMIT_TO_INGRESS)
-                            .withValue(copyFrom((byte) 0b0))
+                            .withValue(copyFrom(ZERO_BIT))
                             .build(),
                     PiPacketMetadata.builder()
                             .withId(UNUSED_PAD)
-                            .withValue(copyFrom((byte) 0b0))
+                            .withValue(copyFrom(ZERO_BIT))
                             .build()
                     );
         } catch (ImmutableByteSequence.ByteSequenceTrimException e) {
@@ -199,6 +200,9 @@ public class SaiInterpreter extends AbstractHandlerBehaviour implements PiPipeli
 
     @Override
     public Optional<PiMatchFieldId> mapCriterionType(Criterion.Type type) {
+        // TODO (daniele): should we completely exclude this case and always
+        //  use PICriterion in the pipeliner? If so, this would mean we couldn't
+        //  use any other ONOS application with sai.p4 (e.g., reactive forwarding).
         return Optional.ofNullable(CRITERION_MAP.get(type));
     }
 
