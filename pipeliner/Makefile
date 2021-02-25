@@ -47,10 +47,10 @@ _mvn_package:
 build-sai-p4 src/main/resources/p4info.txt src/main/resources/bmv2.json:
 	$(info *** Building sai-main.p4)
 	docker run --rm -w /p4src -v ${P4C_SRC_DIR}:/p4src \
-		-v ${P4C_OUT_DIR}:/p4src/p4c-out ${P4C_IMG} \
+		-v ${P4C_OUT_DIR}:/p4c-out ${P4C_IMG} \
 		p4c-bm2-ss --arch v1model ${BMV2_PP_FLAGS} ${OTHER_PP_FLAGS} \
-		--pp /p4src/p4c-out/_pp.p4 -o /p4src/p4c-out/bmv2.json \
-		--p4runtime-files /p4src/p4c-out/p4info.txt \
+		--pp /p4c-out/_pp.p4 -o /p4c-out/bmv2.json \
+		--p4runtime-files /p4c-out/p4info.txt \
 		/p4src/instantiations/google/middleblock.p4
 	@echo "*** google/middleblock.p4 compiled successfully. Files available in src/main/resources"
 
@@ -58,9 +58,9 @@ graphs-sai-p4:
 	$(info *** Building sai-main.p4 graphs)
 	@mkdir -p ${P4C_OUT_DIR}/graphs
 	docker run --rm -w /p4src -v ${P4C_SRC_DIR}:/p4src \
-		-v ${P4C_OUT_DIR}:/p4src/p4c-out ${P4C_IMG} \
+		-v ${P4C_OUT_DIR}:/p4c-out ${P4C_IMG} \
 		p4c-graphs ${BMV2_PP_FLAGS} ${OTHER_PP_FLAGS} \
-		--graphs-dir /p4src/p4c-out/graphs \
+		--graphs-dir /p4c-out/graphs \
 		/p4src/instantiations/google/middleblock.p4
 	for f in ${P4C_OUT_DIR}/graphs/*.dot; do \
 		docker run --rm -w ${P4C_OUT_DIR} -v ${P4C_OUT_DIR}:${P4C_OUT_DIR} ${P4C_IMG} \
