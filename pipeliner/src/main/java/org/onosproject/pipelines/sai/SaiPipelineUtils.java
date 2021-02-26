@@ -5,7 +5,6 @@
 
 package org.onosproject.pipelines.sai;
 
-import com.google.common.primitives.Bytes;
 import org.onlab.packet.IpAddress;
 import org.onlab.packet.MacAddress;
 import org.onosproject.net.PortNumber;
@@ -129,7 +128,7 @@ public final class SaiPipelineUtils {
         return obj.nextTreatments().stream()
                 .filter(t -> t.type() == NextTreatment.Type.TREATMENT)
                 .map(t -> (DefaultNextTreatment) t)
-                .map(t -> t.treatment())
+                .map(DefaultNextTreatment::treatment)
                 .flatMap(t -> t.allInstructions().stream())
                 .filter(ins -> ins.type() == Instruction.Type.L2MODIFICATION)
                 .map(ins -> (L2ModificationInstruction) ins);
@@ -175,13 +174,10 @@ public final class SaiPipelineUtils {
                 "Invalid treatment for table '%s', %s: %s", tableId, explanation, treatment));
     }
 
-    public static PiAction mapNextHashedTreatment(
-            String routerInterfaceId, String neighborId) {
+    public static PiAction buildWcmpTableNextHopAction(String nextHopId) {
         return PiAction.builder()
                 .withId(SaiConstants.INGRESS_ROUTING_SET_NEXTHOP_ID)
-                .withParameter(new PiActionParam(SaiConstants.NEXTHOP_ID,
-                                                 Bytes.concat(neighborId.getBytes(),
-                                                              routerInterfaceId.getBytes())))
+                .withParameter(new PiActionParam(SaiConstants.NEXTHOP_ID, nextHopId.getBytes()))
                 .build();
     }
 }

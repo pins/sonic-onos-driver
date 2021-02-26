@@ -29,7 +29,6 @@ import org.onosproject.net.flowobjective.NextObjective;
 import org.onosproject.net.flowobjective.NextTreatment;
 import org.onosproject.net.flowobjective.Objective;
 import org.onosproject.net.flowobjective.ObjectiveError;
-import org.onosproject.net.group.GroupService;
 import org.onosproject.store.serializers.KryoNamespaces;
 import org.slf4j.Logger;
 
@@ -58,7 +57,6 @@ public class SaiPipeliner extends AbstractHandlerBehaviour implements Pipeliner 
     private DeviceId deviceId;
 
     private FlowRuleService flowRuleService;
-    private GroupService groupService;
     private FlowObjectiveStore flowObjectiveStore;
 
     private ForwardingObjectiveTranslator forwardingTranslator;
@@ -66,10 +64,6 @@ public class SaiPipeliner extends AbstractHandlerBehaviour implements Pipeliner 
     private FilteringObjectiveTranslator filteringTranslator;
 
     private final ExecutorService callbackExecutor = SharedExecutors.getPoolThreadExecutor();
-
-    public static Instructions.OutputInstruction outputInstruction(TrafficTreatment treatment) {
-        return instruction(treatment, Instruction.Type.OUTPUT);
-    }
 
     public static Instructions.OutputInstruction instruction(TrafficTreatment treatment, Instruction.Type type) {
         return treatment.allInstructions()
@@ -83,11 +77,10 @@ public class SaiPipeliner extends AbstractHandlerBehaviour implements Pipeliner 
     public void init(DeviceId deviceId, PipelinerContext context) {
         this.deviceId = deviceId;
         this.flowRuleService = context.directory().get(FlowRuleService.class);
-        this.groupService = context.directory().get(GroupService.class);
         this.flowObjectiveStore = context.directory().get(FlowObjectiveStore.class);
 
         forwardingTranslator = new ForwardingObjectiveTranslator(deviceId);
-        nextTranslator = new NextObjectiveTranslator(deviceId);
+        nextTranslator = new NextObjectiveTranslator(deviceId, flowObjectiveStore);
         filteringTranslator = new FilteringObjectiveTranslator(deviceId);
     }
 
@@ -105,9 +98,12 @@ public class SaiPipeliner extends AbstractHandlerBehaviour implements Pipeliner 
 
     @Override
     public void next(NextObjective obj) {
+        if (obj.op() == Objective.Operation.MODIFY) {
+            log.error("Operation {} is unsupported in SAI pipeliner", obj.op());
+            fail(obj, ObjectiveError.UNSUPPORTED);
+            return;
+        }
         final ObjectiveTranslation result = nextTranslator.translate(obj);
-        // Here I should pay attention at ordering between flow rules!!!
-
         handleResult(obj, result);
     }
 
@@ -144,8 +140,16 @@ public class SaiPipeliner extends AbstractHandlerBehaviour implements Pipeliner 
                     listFlowRules.forEach(ops::add);
                     break;
                 case REMOVE:
-                case REMOVE_FROM_EXISTING:
                     listFlowRules.forEach(ops::remove);
+                case REMOVE_FROM_EXISTING:
+                    // When removing from existing, the WCMP_GROUP_TABLE
+                    // has to be treated by updating the flow rule, not removing.
+                    listFlowRules.stream()
+                            .filter(flowRule -> flowRule.table() != SaiConstants.INGRESS_ROUTING_WCMP_GROUP_TABLE)
+                            .forEach(ops::remove);
+                    listFlowRules.stream()
+                            .filter(flowRule -> flowRule.table() == SaiConstants.INGRESS_ROUTING_WCMP_GROUP_TABLE)
+                            .forEach(ops::add);
                     break;
                 default:
                     log.warn("Unsupported Objective operation '{}'", objective.op());
@@ -157,16 +161,26 @@ public class SaiPipeliner extends AbstractHandlerBehaviour implements Pipeliner 
     }
 
     private void handleNextGroup(NextObjective obj) {
+
         switch (obj.op()) {
             case REMOVE:
+                // TODO (daniele): what happens if an incomplete next objective is removed?
+                //  should, the NextObjectiveTranslator, be sure that no other
+                //  neighbor/interface/nexthop entries are in the store?
                 removeNextGroup(obj);
                 break;
             case ADD:
-            case ADD_TO_EXISTING:
-            case REMOVE_FROM_EXISTING:
-            case MODIFY:
+                // TODO (daniele): what happens if a next objective is added when it's already present?
+                //  should, the NextObjectiveTranslator, be sure that this is not happening?
+                //  If we don't check, then we will loose the reference to the
+                //  neighbor/interface/nexthop added by the previous next obj.
                 putNextGroup(obj);
                 break;
+            case ADD_TO_EXISTING:
+            case REMOVE_FROM_EXISTING:
+                // ADD_TO_EXISITNG and REMOVE_FROM_EXISTING are managed
+                // directly into the NextObjectiveTranslator.
+            case MODIFY:
             case VERIFY:
                 break;
             default:
@@ -179,16 +193,17 @@ public class SaiPipeliner extends AbstractHandlerBehaviour implements Pipeliner 
             log.debug("NextGroup {} was not found in FlowObjectiveStore", obj.id());
         }
     }
+
     private void putNextGroup(NextObjective obj) {
         final List<String> nextMappings = obj.nextTreatments().stream()
-                .map(this::nextTreatmentToMappingString)
+                .map(SaiPipeliner::nextTreatmentToMappingString)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
-        final SaiNextGroup nextGroup = new SaiNextGroup(obj.type(), nextMappings);
+        final SaiNextGroup nextGroup = new SaiNextGroup(obj.type(), nextMappings, obj.nextTreatments());
         flowObjectiveStore.putNextGroup(obj.id(), nextGroup);
     }
 
-    private String nextTreatmentToMappingString(NextTreatment n) {
+    static String nextTreatmentToMappingString(NextTreatment n) {
         switch (n.type()) {
             case TREATMENT:
                 final PortNumber p = outputPort(n);
@@ -218,15 +233,16 @@ public class SaiPipeliner extends AbstractHandlerBehaviour implements Pipeliner 
     /**
      * NextGroup implementation.
      */
-    private static class SaiNextGroup implements NextGroup {
+    static class SaiNextGroup implements NextGroup {
 
         private final NextObjective.Type type;
         private final List<String> nextMappings;
-        // TODO (daniele): do we need also the nextTreatments?
+        private final Collection<NextTreatment> nextTreatments;
 
-        SaiNextGroup(NextObjective.Type type, List<String> nextMappings) {
+        SaiNextGroup(NextObjective.Type type, List<String> nextMappings, Collection<NextTreatment> nextTreatments) {
             this.type = type;
             this.nextMappings = ImmutableList.copyOf(nextMappings);
+            this.nextTreatments = ImmutableList.copyOf(nextTreatments);
         }
 
         NextObjective.Type type() {
@@ -235,6 +251,10 @@ public class SaiPipeliner extends AbstractHandlerBehaviour implements Pipeliner 
 
         Collection<String> nextMappings() {
             return nextMappings;
+        }
+
+        Collection<NextTreatment> nextTreatments() {
+            return nextTreatments;
         }
 
         @Override

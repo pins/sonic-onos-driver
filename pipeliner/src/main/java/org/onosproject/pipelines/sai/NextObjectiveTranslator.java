@@ -1,6 +1,8 @@
 package org.onosproject.pipelines.sai;
 
 import com.google.common.collect.Lists;
+import org.apache.commons.lang3.tuple.Pair;
+import org.glassfish.jersey.internal.guava.Sets;
 import org.onlab.packet.Ip6Address;
 import org.onlab.packet.MacAddress;
 import org.onosproject.net.DeviceId;
@@ -12,6 +14,7 @@ import org.onosproject.net.flow.TrafficSelector;
 import org.onosproject.net.flow.TrafficTreatment;
 import org.onosproject.net.flow.criteria.PiCriterion;
 import org.onosproject.net.flowobjective.DefaultNextTreatment;
+import org.onosproject.net.flowobjective.FlowObjectiveStore;
 import org.onosproject.net.flowobjective.NextObjective;
 import org.onosproject.net.flowobjective.NextTreatment;
 import org.onosproject.net.flowobjective.Objective;
@@ -22,20 +25,28 @@ import org.onosproject.net.pi.runtime.PiActionProfileActionSet;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import static java.lang.String.format;
 import static org.onlab.packet.IPv6.getLinkLocalAddress;
+import static org.onosproject.pipelines.sai.SaiPipelineUtils.buildWcmpTableNextHopAction;
 import static org.onosproject.pipelines.sai.SaiPipelineUtils.ethDst;
 import static org.onosproject.pipelines.sai.SaiPipelineUtils.ethSrc;
 import static org.onosproject.pipelines.sai.SaiPipelineUtils.isL3NextObj;
 import static org.onosproject.pipelines.sai.SaiPipelineUtils.isMplsObj;
-import static org.onosproject.pipelines.sai.SaiPipelineUtils.mapNextHashedTreatment;
 import static org.onosproject.pipelines.sai.SaiPipelineUtils.outputPort;
+import static org.onosproject.pipelines.sai.SaiPipeliner.KRYO;
 
 public class NextObjectiveTranslator
         extends AbstractObjectiveTranslator<NextObjective> {
 
-    NextObjectiveTranslator(DeviceId deviceId) {
+    private final FlowObjectiveStore flowObjectiveStore;
+
+    NextObjectiveTranslator(DeviceId deviceId, FlowObjectiveStore flowObjectiveStore) {
         super(deviceId);
+        this.flowObjectiveStore = flowObjectiveStore;
     }
 
     @Override
@@ -75,6 +86,8 @@ public class NextObjectiveTranslator
                          "Objective are supported", obj);
     }
 
+
+
     private void hashedNext(NextObjective obj,
                             ObjectiveTranslation.Builder resultBuilder)
             throws SaiPipelinerException {
@@ -83,50 +96,75 @@ public class NextObjectiveTranslator
             return;
         }
 
-        var builderActProfActSet = PiActionProfileActionSet.builder();
+        final var builderActProfActSet = PiActionProfileActionSet.builder();
         final List<DefaultNextTreatment> defaultNextTreatments = defaultNextTreatments(obj.nextTreatments(), true);
         final List<FlowRule> routerInterfaceEntries = Lists.newArrayList();
         final List<FlowRule> neighborEntries = Lists.newArrayList();
         final List<FlowRule> nextHopEntries = Lists.newArrayList();
+        Set<Pair<PiAction, Integer>> wcmpBuckets = Sets.newHashSet();
 
+        // Build flow entries needed by the submitted Next Objective
         for (DefaultNextTreatment t : defaultNextTreatments) {
-            // Create the Neighbor table and Router Interface Entries
-            final MacAddress srcMac = ethSrc(t);
-            if (srcMac == null) {
-                throw new SaiPipelinerException("No ETH_SRC l2instruction in NextObjective");
-            }
-            final MacAddress dstMac = ethDst(t);
-            if (dstMac == null) {
-                throw new SaiPipelinerException("No ETH_DST l2instruction in NextObjective");
-            }
-            final PortNumber outPort = outputPort(t);
-            if (outPort == null) {
-                throw new SaiPipelinerException("No OUTPUT instruction in NextObjective");
-            }
+            final MacAddress srcMac = getSrcMacOrException(t);
+            final MacAddress dstMac = getDstMacOrException(t);
+            final PortNumber outPort = getOutPortOrException(t);
             // Currently we use output port name as the router interface ID
             final String routerInterfaceId = outPort.name();
             // Neighbor ID should be the IPv6 LL address of the destination (calculated from the dst MAC)
             final String neighborId = Ip6Address.valueOf(getLinkLocalAddress(dstMac.toBytes())).toString();
-            // TODO (daniele): Find something more meaningful than concat for nextHopId
+            // TODO (daniele): Something more meaningful than concat for nextHopId
             final String nextHopId = neighborId + "@" + routerInterfaceId;
 
             routerInterfaceEntries.add(buildRouterInterfaceEntry(routerInterfaceId, outPort, srcMac, obj));
             neighborEntries.add(buildNeighbourEntry(routerInterfaceId, neighborId, dstMac, obj));
             nextHopEntries.add(buildNextHopEntry(routerInterfaceId, neighborId, nextHopId, obj));
 
-            // Map treatment to PiActionProfileAction
             // TODO (daniele): modify weight when WCMP is supported
-            builderActProfActSet.addActionProfileAction(
-                    mapNextHashedTreatment(routerInterfaceId, neighborId), 1);
+            wcmpBuckets.add(Pair.of(buildWcmpTableNextHopAction(nextHopId), 1));
         }
+
         if (isGroupModifyOp(obj)) {
-            // TODO (daniele): for group modify we have to modify the flow rule
-            //  in the WCMP table adding the new bucket or modifying weight of
-            //  the others.
-            log.error("Group Modify Operation is not supported yet");
-            return;
+            // When group modify operation we need to regenerate the WCMP group table entry
+            // by adding or removing WCMP buckets.
+
+            final SaiPipeliner.SaiNextGroup saiNextGroup = KRYO.deserialize(
+                    flowObjectiveStore.getNextGroup(obj.id()).data());
+            final Set<NextTreatment> oldNextTreatments = Sets.newHashSet();
+            oldNextTreatments.addAll(saiNextGroup.nextTreatments());
+            final Set<Pair<PiAction, Integer>> oldWcmpBuckets = Sets.newHashSet();
+            // Re-build the WCMP buckets from the information in the flowobjstore.
+            for (var t : oldNextTreatments) {
+                final MacAddress dstMac = getDstMacOrException(t);
+                final PortNumber outPort = getOutPortOrException(t);
+                // Currently we use output port name as the router interface ID
+                final String routerInterfaceId = outPort.name();
+                // Neighbor ID should be the IPv6 LL address of the destination (calculated from the dst MAC)
+                final String neighborId = Ip6Address.valueOf(getLinkLocalAddress(dstMac.toBytes())).toString();
+                // TODO (daniele): Something more meaningful than concat for nextHopId
+                final String nextHopId = neighborId + "@" + routerInterfaceId;
+                // TODO (daniele): modify weight when WCMP is supported
+                oldWcmpBuckets.add(Pair.of(buildWcmpTableNextHopAction(nextHopId), 1));
+            }
+            switch (obj.op()) {
+                case ADD_TO_EXISTING:
+                    wcmpBuckets.addAll(oldWcmpBuckets);
+                    oldNextTreatments.addAll(obj.nextTreatments());
+                    break;
+                case REMOVE_FROM_EXISTING:
+                    oldWcmpBuckets.removeAll(wcmpBuckets);
+                    wcmpBuckets = oldWcmpBuckets;
+                    oldNextTreatments.removeAll(obj.nextTreatments());
+                    break;
+                default:
+                    log.error("I should never reach this point");
+                    throw new SaiPipelinerException("Unreachable point");
+            }
+            // Update the Next Group in the store for future use.
+            updateNextGroup(obj, oldNextTreatments);
         }
         // Create the WCMP group table entry.
+        wcmpBuckets.forEach(bucket -> builderActProfActSet
+                .addActionProfileAction(bucket.getLeft(), bucket.getRight()));
         final TrafficSelector selector = nextIdSelector(obj.id());
         final TrafficTreatment treatment = DefaultTrafficTreatment.builder()
                 .piTableAction(builderActProfActSet.build())
@@ -279,12 +317,47 @@ public class NextObjectiveTranslator
     }
 
     private boolean isGroupModifyOp(NextObjective obj) {
-        // If operation is ADD_TO_EXIST, REMOVE_FROM_EXIST or MODIFY, it means we modify
-        // group buckets only, no changes for flow rules.
-        // FIXME Please note that for MODIFY op this could not apply in future if we extend the scope of MODIFY
+        // If operation is ADD_TO_EXIST, REMOVE_FROM_EXIST, it means we need to
+        // modify the WCMP table entry already in the store.
         return obj.op() == Objective.Operation.ADD_TO_EXISTING ||
-                obj.op() == Objective.Operation.REMOVE_FROM_EXISTING ||
-                obj.op() == Objective.Operation.MODIFY;
+                obj.op() == Objective.Operation.REMOVE_FROM_EXISTING;
+    }
+
+    private void updateNextGroup(NextObjective obj, Collection<NextTreatment> newNextTreatments) {
+        final List<String> nextMappings = newNextTreatments.stream()
+                .map(SaiPipeliner::nextTreatmentToMappingString)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+        final SaiPipeliner.SaiNextGroup nextGroup = new SaiPipeliner.SaiNextGroup(
+                obj.type(), nextMappings, newNextTreatments);
+        flowObjectiveStore.putNextGroup(obj.id(), nextGroup);
+    }
+
+    private MacAddress getSrcMacOrException(NextTreatment treatment)
+            throws SaiPipelinerException {
+        final MacAddress srcMac = ethSrc(treatment);
+        if (srcMac == null) {
+            throw new SaiPipelinerException("No ETH_SRC l2instruction in NextObjective");
+        }
+        return srcMac;
+    }
+
+    private MacAddress getDstMacOrException(NextTreatment treatment)
+            throws SaiPipelinerException {
+        final MacAddress dstMac = ethDst(treatment);
+        if (dstMac == null) {
+            throw new SaiPipelinerException("No ETH_DST l2instruction in NextObjective");
+        }
+        return dstMac;
+    }
+
+    private PortNumber getOutPortOrException(NextTreatment treatment)
+            throws SaiPipelinerException {
+        final PortNumber outPort = outputPort(treatment);
+        if (outPort == null) {
+            throw new SaiPipelinerException("No OUTPUT instruction in NextObjective");
+        }
+        return outPort;
     }
 
 }
