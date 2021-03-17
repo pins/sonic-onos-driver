@@ -109,7 +109,7 @@ public class NextObjectiveTranslator
             final MacAddress dstMac = getDstMacOrException(t);
             final PortNumber outPort = getOutPortOrException(t);
             // Currently we use output port name as the router interface ID
-            final String routerInterfaceId = outPort.name();
+            final String routerInterfaceId = deviceId.toString() + "/" + outPort.name();
             // Neighbor ID should be the IPv6 LL address of the destination (calculated from the dst MAC)
             final String neighborId = Ip6Address.valueOf(getLinkLocalAddress(dstMac.toBytes())).toString();
             // TODO (daniele): Something more meaningful than concat for nextHopId
@@ -137,7 +137,7 @@ public class NextObjectiveTranslator
                 final MacAddress dstMac = getDstMacOrException(t);
                 final PortNumber outPort = getOutPortOrException(t);
                 // Currently we use output port name as the router interface ID
-                final String routerInterfaceId = outPort.name();
+                final String routerInterfaceId = deviceId.toString() + "/" + outPort.name();
                 // Neighbor ID should be the IPv6 LL address of the destination (calculated from the dst MAC)
                 final String neighborId = Ip6Address.valueOf(getLinkLocalAddress(dstMac.toBytes())).toString();
                 // TODO (daniele): Something more meaningful than concat for nextHopId
@@ -247,7 +247,7 @@ public class NextObjectiveTranslator
 
         final List<PiActionParam> actionParams = Lists.newArrayList(
                 new PiActionParam(SaiConstants.SRC_MAC, srcMac.toBytes()),
-                new PiActionParam(SaiConstants.PORT, outputPort.toLong())
+                new PiActionParam(SaiConstants.PORT, outputPort.name())
         );
         final TrafficTreatment treatment = DefaultTrafficTreatment.builder()
                 .piTableAction(

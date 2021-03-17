@@ -42,13 +42,14 @@ public class FilteringObjectiveTranslator
         final PortCriterion inPort = (PortCriterion) obj.key();
         final EthCriterion ethDst = (EthCriterion) criterion(
                 obj.conditions(), Criterion.Type.ETH_DST);
+        final PiCriterion inPortCriterion = PiCriterion.builder()
+                .matchOptional(SaiConstants.HDR_IN_PORT,
+                               inPort.port().name()).build();
 
         final TrafficSelector selector = DefaultTrafficSelector.builder()
                 .matchEthDstMasked(ethDst.mac(), ethDst.mask() == null ?
                         MacAddress.EXACT_MASK : ethDst.mask())
-                // TODO: must be changed when ports switch to strings
-                .matchPi(PiCriterion.builder().matchOptional(SaiConstants.HDR_IN_PORT,
-                                                             inPort.port().toLong()).build())
+                .matchPi(inPortCriterion)
                 .build();
 
         final PiAction action = PiAction.builder()

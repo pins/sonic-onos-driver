@@ -48,12 +48,10 @@ import static org.onosproject.pipelines.sai.SaiConstants.*;
  */
 public class SaiInterpreter extends AbstractHandlerBehaviour implements PiPipelineInterpreter {
 
-    private static final int PORT_BITWIDTH = 32;
-
     // N.B.: DO NOT add the IN_PORT inside the criterion map. We don't want to
     //  use the ONOS criterion translation logic for IN_PORT criterion
     //  (e.g., CriterionTranslators.PortCriterionTranslator).
-    //  In SAI we (will) refer to ports via strings while in ONOS, by default,
+    //  In SAI we refer to ports via strings while in ONOS, by default,
     //  ports are referred via the integer numbers (see ONOS PortNumber class).
     //  We should always push flow rule with PROTOCOL_INDEPENDENT Criterion
     //  when referring to IN_PORT.
@@ -121,10 +119,12 @@ public class SaiInterpreter extends AbstractHandlerBehaviour implements PiPipeli
                 // operation for each switch port.
                 final DeviceService deviceService = handler().get(DeviceService.class);
                 for (Port port : deviceService.getPorts(packet.sendThrough())) {
-                    builder.add(createPiPacketOperation(deviceId, packet.data(), port.number().toLong()));
+                    builder.add(createPiPacketOperation(deviceId, packet.data(),
+                                                        port.number()));
                 }
             } else {
-                builder.add(createPiPacketOperation(deviceId, packet.data(), outInst.port().toLong()));
+                builder.add(createPiPacketOperation(deviceId, packet.data(),
+                                                    outInst.port()));
             }
         }
         return builder.build();
@@ -149,10 +149,26 @@ public class SaiInterpreter extends AbstractHandlerBehaviour implements PiPipeli
                 .findFirst();
 
         if (packetMetadata.isPresent()) {
-            // TODO (daniele): Get the port name via DeviceService?
             ImmutableByteSequence portByteSequence = packetMetadata.get().value();
-            short s = portByteSequence.asReadOnlyBuffer().getShort();
-            ConnectPoint receivedFrom = new ConnectPoint(deviceId, PortNumber.portNumber(s));
+            String portString = portByteSequence.toString();
+            // From switch we are getting the String representation of the port,
+            // we need to query DeviceService and find the corresponding port.
+            final DeviceService deviceService = handler().get(DeviceService.class);
+            final List<Port> portList = deviceService.getPorts(deviceId).stream()
+                    .filter(port -> port.number().name().equals(portString))
+                    .collect(toList());
+            if (portList.isEmpty()) {
+                throw new PiInterpreterException(format(
+                        "No port found for packet-in received from '%s': %s",
+                        deviceId, packetIn));
+            }
+            if (portList.size() > 1) {
+                throw new PiInterpreterException(format(
+                        "%d ports found for packet-in received from '%s': %s",
+                        portList.size(), deviceId, packetIn));
+            }
+            final Port actualPort = portList.get(0);
+            ConnectPoint receivedFrom = new ConnectPoint(deviceId, actualPort.number());
             ByteBuffer rawData = ByteBuffer.wrap(packetIn.data().asArray());
             return new DefaultInboundPacket(receivedFrom, ethPkt, rawData);
         } else {
@@ -163,9 +179,8 @@ public class SaiInterpreter extends AbstractHandlerBehaviour implements PiPipeli
     }
 
     private PiPacketOperation createPiPacketOperation(
-            DeviceId deviceId, ByteBuffer data, long portNumber)
-            throws PiInterpreterException {
-        List<PiPacketMetadata> metadata = createPacketMetadata(portNumber);
+            DeviceId deviceId, ByteBuffer data, PortNumber portNumber) {
+        List<PiPacketMetadata> metadata = createPacketMetadata(portNumber.name());
         return PiPacketOperation.builder()
                 .withType(PACKET_OUT)
                 .withData(copyFrom(data))
@@ -173,29 +188,22 @@ public class SaiInterpreter extends AbstractHandlerBehaviour implements PiPipeli
                 .build();
     }
 
-    private List<PiPacketMetadata> createPacketMetadata(long portNumber)
-            throws PiInterpreterException {
-        try {
-            return ImmutableList.of(
-                    // TODO: this will be modified when ports will be string
-                    PiPacketMetadata.builder()
-                            .withId(EGRESS_PORT)
-                            .withValue(copyFrom(portNumber).fit(PORT_BITWIDTH))
-                            .build(),
-                    // FIXME: should submit to ingress or directly output to port
-                    PiPacketMetadata.builder()
-                            .withId(SUBMIT_TO_INGRESS)
-                            .withValue(copyFrom(ZERO_BIT))
-                            .build(),
-                    PiPacketMetadata.builder()
-                            .withId(UNUSED_PAD)
-                            .withValue(copyFrom(ZERO_BIT))
-                            .build()
-                    );
-        } catch (ImmutableByteSequence.ByteSequenceTrimException e) {
-            throw new PiInterpreterException(format(
-                    "Port number '%d' too big, %s", portNumber, e.getMessage()));
-        }
+    private List<PiPacketMetadata> createPacketMetadata(String portNumber) {
+        return ImmutableList.of(
+                PiPacketMetadata.builder()
+                        .withId(EGRESS_PORT)
+                        .withValue(copyFrom(portNumber))
+                        .build(),
+                // FIXME: should submit to ingress or directly output to port
+                PiPacketMetadata.builder()
+                        .withId(SUBMIT_TO_INGRESS)
+                        .withValue(copyFrom(ZERO_BIT))
+                        .build(),
+                PiPacketMetadata.builder()
+                        .withId(UNUSED_PAD)
+                        .withValue(copyFrom(ZERO_BIT))
+                        .build()
+                );
     }
 
     @Override
