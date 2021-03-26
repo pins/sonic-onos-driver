@@ -58,17 +58,22 @@ public class SaiInterpreter extends AbstractHandlerBehaviour implements PiPipeli
     // TODO: is there a possibility of a single Criterion type that is mapped into multiple PiMatchFieldId?
     private static final Map<Criterion.Type, PiMatchFieldId> CRITERION_MAP =
             new ImmutableMap.Builder<Criterion.Type, PiMatchFieldId>()
+                    .put(Criterion.Type.ETH_TYPE, HDR_ETHER_TYPE)
                     .put(Criterion.Type.ETH_DST, HDR_DST_MAC)
                     .put(Criterion.Type.ETH_DST_MASKED, HDR_DST_MAC)
-                    .put(Criterion.Type.ETH_TYPE, HDR_ETHER_TYPE)
                     .put(Criterion.Type.IPV4_DST, HDR_DST_IP)
                     .put(Criterion.Type.IPV4_SRC, HDR_SRC_IP)
                     .put(Criterion.Type.IPV6_DST, HDR_DST_IPV6)
                     .put(Criterion.Type.IPV6_SRC, HDR_SRC_IPV6)
                     .put(Criterion.Type.IP_PROTO, HDR_IP_PROTOCOL)
-                    .put(Criterion.Type.UDP_DST, HDR_L4_DST_PORT)
                     .put(Criterion.Type.TCP_DST, HDR_L4_DST_PORT)
-                    //.put(Criterion.Type.ARP_TPA, HDR_ARP_TPA)
+                    .put(Criterion.Type.TCP_DST_MASKED, HDR_L4_DST_PORT)
+                    .put(Criterion.Type.UDP_DST, HDR_L4_DST_PORT)
+                    .put(Criterion.Type.UDP_DST_MASKED, HDR_L4_DST_PORT)
+//                    .put(Criterion.Type.IP_DSCP, HDR_DSCP)
+//                    .put(Criterion.Type.IP_ECN, HDR_ECN)
+//                    .put(Criterion.Type.ICMPV6_TYPE, HDR_ICMPV6_TYPE)
+//                    .put(Criterion.Type.ARP_TPA, HDR_ARP_TPA)
                     .build();
     public static final byte ZERO_BIT = (byte) 0b0;
 

@@ -50,34 +50,24 @@ import static org.onosproject.pipelines.sai.SaiPipelineUtils.criterionNotNull;
 public class ForwardingObjectiveTranslator
         extends AbstractObjectiveTranslator<ForwardingObjective> {
 
-    // FIXME: check with the new ACL from google sai. Currently we do not support ACL.
-    private static final Set<Criterion.Type> PUNT_CRITERIA = ImmutableSet.of(
-            Criterion.Type.IN_PORT,
-            Criterion.Type.IN_PHY_PORT,
-            Criterion.Type.ETH_TYPE,
-            Criterion.Type.IPV4_SRC,
-            Criterion.Type.IPV4_DST,
-            Criterion.Type.IP_PROTO,
-            Criterion.Type.ICMPV4_CODE,
-            Criterion.Type.VLAN_VID,
-            Criterion.Type.VLAN_PCP,
-            Criterion.Type.PROTOCOL_INDEPENDENT);
     // Supported ACL Criterion
     private static final Set<Criterion.Type> ACL_SUPPORTED_CRITERIA = ImmutableSet.of(
             Criterion.Type.ETH_TYPE,
             Criterion.Type.ETH_DST,
             Criterion.Type.ETH_DST_MASKED,
-            Criterion.Type.ETH_SRC,
-            Criterion.Type.ETH_SRC_MASKED,
+            Criterion.Type.IPV4_DST,
+            Criterion.Type.IPV4_SRC,
             Criterion.Type.IPV6_DST,
-            //No Criterion for: headers.ipv6.next_header
-            //No Criterion for: headers.ipv6.hop_limit
-            Criterion.Type.ICMPV4_TYPE,
-            Criterion.Type.ICMPV6_TYPE,
+            Criterion.Type.IPV6_SRC,
+            Criterion.Type.IP_PROTO,
             Criterion.Type.TCP_DST,
             Criterion.Type.TCP_DST_MASKED,
             Criterion.Type.UDP_DST,
             Criterion.Type.UDP_DST_MASKED,
+//            Criterion.Type.IP_DSCP,
+//            Criterion.Type.IP_ECN,
+//            Criterion.Type.ICMPV6_TYPE,
+//            Criterion.Type.ARP_TPA,
             Criterion.Type.PROTOCOL_INDEPENDENT
     );
 
@@ -102,8 +92,8 @@ public class ForwardingObjectiveTranslator
                 break;
             case VERSATILE:
                 // TODO (daniele): reactivate ACL rules generation.
-                log.warn("Skipping ACL rules for now!");
-                //processVersatileFwd(obj, resultBuilder);
+                //log.warn("Skipping ACL rules for now!");
+                processVersatileFwd(obj, resultBuilder);
                 break;
             case EGRESS:
             default:
@@ -242,6 +232,7 @@ public class ForwardingObjectiveTranslator
                     // Action is PUNT packet to the CPU
                     aclAction = PiAction.builder()
                             .withId(SaiConstants.INGRESS_ACL_INGRESS_TRAP)
+                            .withParameter(new PiActionParam(SaiConstants.QOS_QUEUE, "0x1"))
                             .build();
                 } else {
                     // Action is clone packet to the CPU

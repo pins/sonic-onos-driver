@@ -108,6 +108,7 @@ public class NextObjectiveTranslator
             final MacAddress srcMac = getSrcMacOrException(t);
             final MacAddress dstMac = getDstMacOrException(t);
             final PortNumber outPort = getOutPortOrException(t);
+            // TODO: outPort from REST api won't contain the correct string representation
             // Currently we use output port name as the router interface ID
             final String routerInterfaceId = deviceId.toString() + "/" + outPort.name();
             // Neighbor ID should be the IPv6 LL address of the destination (calculated from the dst MAC)
