@@ -213,15 +213,15 @@ public class NextObjectiveTranslator
                                        NextObjective obj)
             throws SaiPipelinerException {
         final PiCriterion routerInterfaceIdCriterion = PiCriterion.builder()
-                .matchExact(SaiConstants.HDR_NEXTHOP_ID, nextHopId.getBytes())
+                .matchExact(SaiConstants.HDR_NEXTHOP_ID, nextHopId)
                 .build();
         final TrafficSelector selector = DefaultTrafficSelector.builder()
                 .matchPi(routerInterfaceIdCriterion)
                 .build();
 
         final List<PiActionParam> actionParams = Lists.newArrayList(
-                new PiActionParam(SaiConstants.ROUTER_INTERFACE_ID, routerInterfaceId.getBytes()),
-                new PiActionParam(SaiConstants.NEIGHBOR_ID, neighborId.getBytes())
+                new PiActionParam(SaiConstants.ROUTER_INTERFACE_ID, routerInterfaceId),
+                new PiActionParam(SaiConstants.NEIGHBOR_ID, neighborId)
         );
         final TrafficTreatment treatment = DefaultTrafficTreatment.builder()
                 .piTableAction(
@@ -240,7 +240,7 @@ public class NextObjectiveTranslator
             throws SaiPipelinerException {
 
         final PiCriterion routerInterfaceIdCriterion = PiCriterion.builder()
-                .matchExact(SaiConstants.HDR_ROUTER_INTERFACE_ID, routerInterfaceId.getBytes())
+                .matchExact(SaiConstants.HDR_ROUTER_INTERFACE_ID, routerInterfaceId)
                 .build();
         final TrafficSelector selector = DefaultTrafficSelector.builder()
                 .matchPi(routerInterfaceIdCriterion)
@@ -268,8 +268,8 @@ public class NextObjectiveTranslator
                                          NextObjective obj)
             throws SaiPipelinerException {
         final PiCriterion routerInterfaceIdCriterion = PiCriterion.builder()
-                .matchExact(SaiConstants.HDR_ROUTER_INTERFACE_ID, routerInterfaceId.getBytes())
-                .matchExact(SaiConstants.HDR_NEIGHBOR_ID, neighborId.getBytes())
+                .matchExact(SaiConstants.HDR_ROUTER_INTERFACE_ID, routerInterfaceId)
+                .matchExact(SaiConstants.HDR_NEIGHBOR_ID, neighborId)
                 .build();
         final TrafficSelector selector = DefaultTrafficSelector.builder()
                 .matchPi(routerInterfaceIdCriterion)
@@ -291,7 +291,7 @@ public class NextObjectiveTranslator
 
     private TrafficSelector.Builder nextIdSelectorBuilder(int nextId) {
         final PiCriterion nextIdCriterion = PiCriterion.builder()
-                .matchExact(SaiConstants.HDR_WCMP_GROUP_ID, String.valueOf(nextId).getBytes())
+                .matchExact(SaiConstants.HDR_WCMP_GROUP_ID, String.valueOf(nextId))
                 .build();
         return DefaultTrafficSelector.builder()
                 .matchPi(nextIdCriterion);

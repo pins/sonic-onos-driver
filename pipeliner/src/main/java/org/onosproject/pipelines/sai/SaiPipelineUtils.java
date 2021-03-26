@@ -177,7 +177,7 @@ public final class SaiPipelineUtils {
     public static PiAction buildWcmpTableNextHopAction(String nextHopId) {
         return PiAction.builder()
                 .withId(SaiConstants.INGRESS_ROUTING_SET_NEXTHOP_ID)
-                .withParameter(new PiActionParam(SaiConstants.NEXTHOP_ID, nextHopId.getBytes()))
+                .withParameter(new PiActionParam(SaiConstants.NEXTHOP_ID, nextHopId))
                 .build();
     }
 }

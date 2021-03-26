@@ -173,14 +173,14 @@ public class ForwardingObjectiveTranslator
         final TrafficSelector selector = DefaultTrafficSelector.builder()
                 .matchPi(PiCriterion.builder()
                                  .matchExact(SaiConstants.HDR_VRF_ID,
-                                             SaiConstants.DEFAULT_VRF_ID.getBytes())
+                                             SaiConstants.DEFAULT_VRF_ID)
                                  .matchLpm(IP_CRITERION_MAP.get(ipDstCriterion.type()),
                                            ipDstCriterion.ip().address().toOctets(),
                                            ipDstCriterion.ip().prefixLength())
                                  .build())
                 .build();
         final PiActionParam nextIdParam = new PiActionParam(SaiConstants.WCMP_GROUP_ID,
-                                                            String.valueOf(obj.nextId()).getBytes());
+                                                            String.valueOf(obj.nextId()));
 
         // FIXME (daniele): here we should distinguish between WCMP and SIMPLE routing.
         //  However, the type of forwarding is selected in the NextObjective.
