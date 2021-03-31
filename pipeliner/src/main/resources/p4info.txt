@@ -6,7 +6,6 @@ tables {
     id: 33554689
     name: "ingress.acl_lookup.acl_lookup_table"
     alias: "acl_lookup_table"
-    annotations: "@proto_package(\"sai\")"
     annotations: "@sai_acl(LOOKUP)"
     annotations: "@entry_restriction(\"\n    // Only allow IP field matches for IP packets.\n    dscp::mask != 0 -> (is_ip == 1 || is_ipv4 == 1 || is_ipv6 == 1);\n    dst_ip::mask != 0 -> is_ipv4 == 1;\n    dst_ipv6::mask != 0 -> is_ipv6 == 1;\n    // Forbid illegal combinations of IP_TYPE fields.\n    is_ip::mask != 0 -> (is_ipv4::mask == 0 && is_ipv6::mask == 0);\n    is_ipv4::mask != 0 -> (is_ip::mask == 0 && is_ipv6::mask == 0);\n    is_ipv6::mask != 0 -> (is_ip::mask == 0 && is_ipv4::mask == 0);\n    // Forbid unsupported combinations of IP_TYPE fields.\n    is_ipv4::mask != 0 -> (is_ipv4 == 1);\n    is_ipv6::mask != 0 -> (is_ipv6 == 1);\n  \")"
   }
@@ -66,8 +65,10 @@ tables {
     id: 8
     name: "in_port"
     annotations: "@sai_field(SAI_ACL_TABLE_ATTR_FIELD_IN_PORT)"
-    bitwidth: 9
     match_type: OPTIONAL
+    type_name {
+      name: "port_id_t"
+    }
   }
   action_refs {
     id: 16777472
@@ -87,7 +88,6 @@ tables {
     id: 33554503
     name: "ingress.l3_admit.l3_admit_table"
     alias: "l3_admit_table"
-    annotations: "@proto_package(\"sai\")"
   }
   match_fields {
     id: 1
@@ -99,8 +99,10 @@ tables {
   match_fields {
     id: 2
     name: "in_port"
-    bitwidth: 9
     match_type: OPTIONAL
+    type_name {
+      name: "port_id_t"
+    }
   }
   action_refs {
     id: 16777224
@@ -119,7 +121,6 @@ tables {
     id: 33554496
     name: "ingress.routing.neighbor_table"
     alias: "neighbor_table"
-    annotations: "@proto_package(\"sai\")"
   }
   match_fields {
     id: 1
@@ -155,7 +156,6 @@ tables {
     id: 33554497
     name: "ingress.routing.router_interface_table"
     alias: "router_interface_table"
-    annotations: "@proto_package(\"sai\")"
   }
   match_fields {
     id: 1
@@ -182,7 +182,6 @@ tables {
     id: 33554498
     name: "ingress.routing.nexthop_table"
     alias: "nexthop_table"
-    annotations: "@proto_package(\"sai\")"
   }
   match_fields {
     id: 1
@@ -209,7 +208,6 @@ tables {
     id: 33554499
     name: "ingress.routing.wcmp_group_table"
     alias: "wcmp_group_table"
-    annotations: "@proto_package(\"sai\")"
     annotations: "@oneshot"
   }
   match_fields {
@@ -238,7 +236,6 @@ tables {
     id: 33554500
     name: "ingress.routing.ipv4_table"
     alias: "ipv4_table"
-    annotations: "@proto_package(\"sai\")"
   }
   match_fields {
     id: 1
@@ -275,7 +272,6 @@ tables {
     id: 33554501
     name: "ingress.routing.ipv6_table"
     alias: "ipv6_table"
-    annotations: "@proto_package(\"sai\")"
   }
   match_fields {
     id: 1
@@ -312,7 +308,6 @@ tables {
     id: 33554690
     name: "ingress.acl_linkqual.acl_linkqual_table"
     alias: "acl_linkqual_table"
-    annotations: "@proto_package(\"sai\")"
     annotations: "@sai_acl(INGRESS)"
   }
   match_fields {
@@ -334,8 +329,10 @@ tables {
     id: 3
     name: "in_port"
     annotations: "@sai_field(SAI_ACL_TABLE_ATTR_FIELD_IN_PORT)"
-    bitwidth: 9
     match_type: OPTIONAL
+    type_name {
+      name: "port_id_t"
+    }
   }
   action_refs {
     id: 16777477
@@ -359,9 +356,8 @@ tables {
     id: 33554688
     name: "ingress.acl_ingress.acl_ingress_table"
     alias: "acl_ingress_table"
-    annotations: "@proto_package(\"sai\")"
     annotations: "@sai_acl(INGRESS)"
-    annotations: "@entry_restriction(\"\n    // Only allow IP field matches for IP packets.\n    dst_ip::mask != 0 -> is_ipv4 == 1;\n    dst_ipv6::mask != 0 -> is_ipv6 == 1;\n    ttl::mask != 0 -> (is_ip == 1 || is_ipv4 == 1 || is_ipv6 == 1);\n    dscp::mask != 0 -> (is_ip == 1 || is_ipv4 == 1 || is_ipv6 == 1);\n    ecn::mask != 0 -> (is_ip == 1 || is_ipv4 == 1 || is_ipv6 == 1);\n    ip_protocol::mask != 0 -> (is_ip == 1 || is_ipv4 == 1 || is_ipv6 == 1);\n    // Forbit using ether_type for IP packets (by convention, use is_ip* instead).\n    ether_type != 0x0800 && ether_type != 0x86dd;\n    // Only allow arp_tpa for ARP packets\n    //arp_tpa::mask != 0 -> ether_type == 0x0806;\n    // Only allow icmp_type for ICMP packets\n    icmp_type::mask != 0 -> ((is_ip == 1 || is_ipv4 == 1 || is_ipv6 == 1) && ip_protocol == 58);\n    // Forbid illegal combinations of IP_TYPE fields.\n    is_ip::mask != 0 -> (is_ipv4::mask == 0 && is_ipv6::mask == 0);\n    is_ipv4::mask != 0 -> (is_ip::mask == 0 && is_ipv6::mask == 0);\n    is_ipv6::mask != 0 -> (is_ip::mask == 0 && is_ipv4::mask == 0);\n    // Forbid unsupported combinations of IP_TYPE fields.\n    is_ipv4::mask != 0 -> (is_ipv4 == 1);\n    is_ipv6::mask != 0 -> (is_ipv6 == 1);\n  \")"
+    annotations: "@entry_restriction(\"\n    // Only allow IP field matches for IP packets.\n    dst_ip::mask != 0 -> is_ipv4 == 1;\n    dst_ipv6::mask != 0 -> is_ipv6 == 1;\n    ttl::mask != 0 -> (is_ip == 1 || is_ipv4 == 1 || is_ipv6 == 1);\n    dscp::mask != 0 -> (is_ip == 1 || is_ipv4 == 1 || is_ipv6 == 1);\n    ecn::mask != 0 -> (is_ip == 1 || is_ipv4 == 1 || is_ipv6 == 1);\n    ip_protocol::mask != 0 -> (is_ip == 1 || is_ipv4 == 1 || is_ipv6 == 1);\n    // Forbit using ether_type for IP packets (by convention, use is_ip* instead).\n    ether_type != 0x0800 && ether_type != 0x86dd;\n    // Only allow arp_tpa for ARP packets\n    arp_tpa::mask != 0 -> ether_type == 0x0806;\n    // Only allow icmp_type for ICMP packets\n    icmpv6_type::mask != 0 -> ((is_ip == 1 || is_ipv4 == 1 || is_ipv6 == 1) && ip_protocol == 58);\n    // Forbid illegal combinations of IP_TYPE fields.\n    is_ip::mask != 0 -> (is_ipv4::mask == 0 && is_ipv6::mask == 0);\n    is_ipv4::mask != 0 -> (is_ip::mask == 0 && is_ipv6::mask == 0);\n    is_ipv6::mask != 0 -> (is_ip::mask == 0 && is_ipv4::mask == 0);\n    // Forbid unsupported combinations of IP_TYPE fields.\n    is_ipv4::mask != 0 -> (is_ipv4 == 1);\n    is_ipv6::mask != 0 -> (is_ipv6 == 1);\n  \")"
   }
   match_fields {
     id: 1
@@ -503,7 +499,6 @@ tables {
     id: 33554502
     name: "ingress.mirroring_clone.mirror_session_table"
     alias: "mirror_session_table"
-    annotations: "@proto_package(\"sai\")"
   }
   match_fields {
     id: 1
@@ -523,19 +518,17 @@ tables {
     scope: DEFAULT_ONLY
   }
   const_default_action_id: 21257015
-  size: 1024
+  size: 2
 }
 tables {
   preamble {
     id: 33554504
     name: "ingress.mirroring_clone.mirror_port_to_pre_session_table"
     alias: "mirror_port_to_pre_session_table"
-    annotations: "@proto_package(\"sai\")"
   }
   match_fields {
     id: 1
     name: "mirror_port"
-    bitwidth: 9
     match_type: EXACT
     type_name {
       name: "port_id_t"
@@ -586,6 +579,40 @@ actions {
 }
 actions {
   preamble {
+    id: 17825802
+    name: "ingress.hashing.select_emcp_hash_algorithm"
+    alias: "select_emcp_hash_algorithm"
+    annotations: "@sai_hash_algorithm(SAI_HASH_ALGORITHM_CRC_32LO)"
+    annotations: "@sai_hash_seed(0)"
+    annotations: "@sai_hash_offset(0)"
+  }
+}
+actions {
+  preamble {
+    id: 16777227
+    name: "ingress.hashing.compute_ecmp_hash_ipv4"
+    alias: "compute_ecmp_hash_ipv4"
+    annotations: "@sai_ecmp_hash(SAI_SWITCH_ATTR_ECMP_HASH_IPV4)"
+    annotations: "@sai_native_hash_field(SAI_NATIVE_HASH_FIELD_SRC_IPV4)"
+    annotations: "@sai_native_hash_field(SAI_NATIVE_HASH_FIELD_DST_IPV4)"
+    annotations: "@sai_native_hash_field(SAI_NATIVE_HASH_FIELD_L4_SRC_PORT)"
+    annotations: "@sai_native_hash_field(SAI_NATIVE_HASH_FIELD_L4_DST_PORT)"
+  }
+}
+actions {
+  preamble {
+    id: 16777228
+    name: "ingress.hashing.compute_ecmp_hash_ipv6"
+    alias: "compute_ecmp_hash_ipv6"
+    annotations: "@sai_ecmp_hash(SAI_SWITCH_ATTR_ECMP_HASH_IPV6)"
+    annotations: "@sai_native_hash_field(SAI_NATIVE_HASH_FIELD_SRC_IPV6)"
+    annotations: "@sai_native_hash_field(SAI_NATIVE_HASH_FIELD_DST_IPV6)"
+    annotations: "@sai_native_hash_field(SAI_NATIVE_HASH_FIELD_L4_SRC_PORT)"
+    annotations: "@sai_native_hash_field(SAI_NATIVE_HASH_FIELD_L4_DST_PORT)"
+  }
+}
+actions {
+  preamble {
     id: 16777217
     name: "ingress.routing.set_dst_mac"
     alias: "set_dst_mac"
@@ -606,7 +633,6 @@ actions {
   params {
     id: 1
     name: "port"
-    bitwidth: 9
     type_name {
       name: "port_id_t"
     }
@@ -698,7 +724,6 @@ actions {
     id: 1
     name: "port"
     annotations: "@sai_action_param(SAI_ACL_ENTRY_ATTR_ACTION_REDIRECT)"
-    bitwidth: 9
     type_name {
       name: "port_id_t"
     }
@@ -766,12 +791,10 @@ actions {
     id: 16777223
     name: "ingress.mirroring_clone.mirror_as_ipv4_erspan"
     alias: "mirror_as_ipv4_erspan"
-    annotations: "@proto_package(\"sai\")"
   }
   params {
     id: 1
     name: "port"
-    bitwidth: 9
     type_name {
       name: "port_id_t"
     }
@@ -816,7 +839,6 @@ actions {
     id: 16777225
     name: "ingress.mirroring_clone.set_pre_session"
     alias: "set_pre_session"
-    annotations: "@proto_package(\"sai\")"
   }
   params {
     id: 1
@@ -829,12 +851,11 @@ action_profiles {
     id: 299650760
     name: "ingress.routing.wcmp_group_selector"
     alias: "wcmp_group_selector"
-    annotations: "@max_sum_of_weights_per_group(1024)"
-    annotations: "@max_sum_of_weights_across_all_groups(65536)"
   }
   table_ids: 33554499
   with_selector: true
   size: 65536
+  max_group_size: 1024
 }
 direct_counters {
   preamble {
@@ -890,7 +911,6 @@ controller_packet_metadata {
   metadata {
     id: 1
     name: "ingress_port"
-    bitwidth: 9
     type_name {
       name: "port_id_t"
     }
@@ -898,7 +918,6 @@ controller_packet_metadata {
   metadata {
     id: 2
     name: "target_egress_port"
-    bitwidth: 9
     type_name {
       name: "port_id_t"
     }
@@ -914,7 +933,6 @@ controller_packet_metadata {
   metadata {
     id: 1
     name: "egress_port"
-    bitwidth: 9
     type_name {
       name: "port_id_t"
     }
@@ -961,11 +979,8 @@ type_info {
   new_types {
     key: "port_id_t"
     value {
-      original_type {
-        bitstring {
-          bit {
-            bitwidth: 9
-          }
+      translated_type {
+        sdn_string {
         }
       }
     }

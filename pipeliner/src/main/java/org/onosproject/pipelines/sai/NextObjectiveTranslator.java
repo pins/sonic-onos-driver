@@ -6,7 +6,9 @@ import org.glassfish.jersey.internal.guava.Sets;
 import org.onlab.packet.Ip6Address;
 import org.onlab.packet.MacAddress;
 import org.onosproject.net.DeviceId;
+import org.onosproject.net.Port;
 import org.onosproject.net.PortNumber;
+import org.onosproject.net.device.DeviceService;
 import org.onosproject.net.flow.DefaultTrafficSelector;
 import org.onosproject.net.flow.DefaultTrafficTreatment;
 import org.onosproject.net.flow.FlowRule;
@@ -43,10 +45,13 @@ public class NextObjectiveTranslator
         extends AbstractObjectiveTranslator<NextObjective> {
 
     private final FlowObjectiveStore flowObjectiveStore;
+    private final DeviceService deviceService;
 
-    NextObjectiveTranslator(DeviceId deviceId, FlowObjectiveStore flowObjectiveStore) {
+    NextObjectiveTranslator(DeviceId deviceId, FlowObjectiveStore flowObjectiveStore,
+                            DeviceService deviceService) {
         super(deviceId);
         this.flowObjectiveStore = flowObjectiveStore;
+        this.deviceService = deviceService;
     }
 
     @Override
@@ -358,7 +363,12 @@ public class NextObjectiveTranslator
         if (outPort == null) {
             throw new SaiPipelinerException("No OUTPUT instruction in NextObjective");
         }
-        return outPort;
+        final Port actualPort = deviceService.getPort(deviceId, outPort);
+        if (actualPort == null) {
+            log.warn("{} port not found in device: {}", outPort, deviceId);
+            return outPort;
+        }
+        return actualPort.number();
     }
 
 }

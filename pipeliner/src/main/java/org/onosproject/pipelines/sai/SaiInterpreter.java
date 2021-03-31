@@ -185,6 +185,11 @@ public class SaiInterpreter extends AbstractHandlerBehaviour implements PiPipeli
 
     private PiPacketOperation createPiPacketOperation(
             DeviceId deviceId, ByteBuffer data, PortNumber portNumber) {
+        final DeviceService deviceService = handler().get(DeviceService.class);
+        final Port actualPort = deviceService.getPort(deviceId, portNumber);
+        if (actualPort != null) {
+            portNumber = actualPort.number();
+        }
         List<PiPacketMetadata> metadata = createPacketMetadata(portNumber.name());
         return PiPacketOperation.builder()
                 .withType(PACKET_OUT)

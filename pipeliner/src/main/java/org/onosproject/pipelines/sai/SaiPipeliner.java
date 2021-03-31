@@ -14,6 +14,7 @@ import org.onosproject.net.PortNumber;
 import org.onosproject.net.behaviour.NextGroup;
 import org.onosproject.net.behaviour.Pipeliner;
 import org.onosproject.net.behaviour.PipelinerContext;
+import org.onosproject.net.device.DeviceService;
 import org.onosproject.net.driver.AbstractHandlerBehaviour;
 import org.onosproject.net.flow.FlowRule;
 import org.onosproject.net.flow.FlowRuleOperations;
@@ -58,6 +59,7 @@ public class SaiPipeliner extends AbstractHandlerBehaviour implements Pipeliner 
 
     private FlowRuleService flowRuleService;
     private FlowObjectiveStore flowObjectiveStore;
+    private DeviceService deviceService;
 
     private ForwardingObjectiveTranslator forwardingTranslator;
     private NextObjectiveTranslator nextTranslator;
@@ -78,9 +80,11 @@ public class SaiPipeliner extends AbstractHandlerBehaviour implements Pipeliner 
         this.deviceId = deviceId;
         this.flowRuleService = context.directory().get(FlowRuleService.class);
         this.flowObjectiveStore = context.directory().get(FlowObjectiveStore.class);
+        this.deviceService = context.directory().get(DeviceService.class);
 
         forwardingTranslator = new ForwardingObjectiveTranslator(deviceId);
-        nextTranslator = new NextObjectiveTranslator(deviceId, flowObjectiveStore);
+        nextTranslator = new NextObjectiveTranslator(deviceId, flowObjectiveStore,
+                                                     deviceService);
         filteringTranslator = new FilteringObjectiveTranslator(deviceId);
     }
 
