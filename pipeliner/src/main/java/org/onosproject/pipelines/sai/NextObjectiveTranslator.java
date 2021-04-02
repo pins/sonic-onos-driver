@@ -360,6 +360,8 @@ public class NextObjectiveTranslator
     private PortNumber getOutPortOrException(NextTreatment treatment)
             throws SaiPipelinerException {
         final PortNumber outPort = outputPort(treatment);
+        // FIXME: this part can be moved to pipeline utils. It is used similarly
+        //  in other part of the code
         if (outPort == null) {
             throw new SaiPipelinerException("No OUTPUT instruction in NextObjective");
         }

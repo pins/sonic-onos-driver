@@ -85,7 +85,7 @@ public class SaiPipeliner extends AbstractHandlerBehaviour implements Pipeliner 
         forwardingTranslator = new ForwardingObjectiveTranslator(deviceId);
         nextTranslator = new NextObjectiveTranslator(deviceId, flowObjectiveStore,
                                                      deviceService);
-        filteringTranslator = new FilteringObjectiveTranslator(deviceId);
+        filteringTranslator = new FilteringObjectiveTranslator(deviceId, deviceService);
     }
 
     @Override

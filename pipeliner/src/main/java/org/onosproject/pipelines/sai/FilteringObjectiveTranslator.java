@@ -2,6 +2,9 @@ package org.onosproject.pipelines.sai;
 
 import org.onlab.packet.MacAddress;
 import org.onosproject.net.DeviceId;
+import org.onosproject.net.Port;
+import org.onosproject.net.PortNumber;
+import org.onosproject.net.device.DeviceService;
 import org.onosproject.net.flow.DefaultTrafficSelector;
 import org.onosproject.net.flow.DefaultTrafficTreatment;
 import org.onosproject.net.flow.TrafficSelector;
@@ -19,8 +22,11 @@ import static org.onosproject.pipelines.sai.SaiPipelineUtils.criterion;
 public class FilteringObjectiveTranslator
         extends AbstractObjectiveTranslator<FilteringObjective> {
 
-    public FilteringObjectiveTranslator(DeviceId deviceId) {
+    private DeviceService deviceService;
+
+    public FilteringObjectiveTranslator(DeviceId deviceId, DeviceService deviceService) {
         super(deviceId);
+        this.deviceService = deviceService;
     }
 
     @Override
@@ -39,26 +45,39 @@ public class FilteringObjectiveTranslator
                     ObjectiveError.BADPARAMS);
         }
 
+        // FIXME: generalize and move to pipeline utils
         final PortCriterion inPort = (PortCriterion) obj.key();
-        final EthCriterion ethDst = (EthCriterion) criterion(
-                obj.conditions(), Criterion.Type.ETH_DST);
+        if (inPort == null) {
+            throw new SaiPipelinerException("No PORT KEY in FilteringObjective");
+        }
+        PortNumber inPortNumber = inPort.port();
+        final Port actualPort = deviceService.getPort(deviceId, inPortNumber);
+        if (actualPort == null) {
+            log.warn("{} port not found in device: {}", inPort, deviceId);
+        } else {
+            inPortNumber = actualPort.number();
+        }
+
+
         final PiCriterion inPortCriterion = PiCriterion.builder()
                 .matchOptional(SaiConstants.HDR_IN_PORT,
-                               inPort.port().name()).build();
-
-        final TrafficSelector selector = DefaultTrafficSelector.builder()
-                .matchEthDstMasked(ethDst.mac(), ethDst.mask() == null ?
-                        MacAddress.EXACT_MASK : ethDst.mask())
-                .matchPi(inPortCriterion)
-                .build();
-
+                               inPortNumber.name()).build();
+        final EthCriterion ethDst = (EthCriterion) criterion(
+                obj.conditions(), Criterion.Type.ETH_DST);
+        final TrafficSelector.Builder selectorBuilder = DefaultTrafficSelector.builder();
+        if (ethDst != null) {
+            selectorBuilder
+                    .matchEthDstMasked(ethDst.mac(), ethDst.mask() == null ?
+                            MacAddress.EXACT_MASK : ethDst.mask())
+                    .matchPi(inPortCriterion);
+        }
         final PiAction action = PiAction.builder()
                 .withId(SaiConstants.INGRESS_L3_ADMIT_ADMIT_TO_L3)
                 .build();
 
         resultBuilder.addFlowRule(
                 flowRule(obj, SaiConstants.INGRESS_L3_ADMIT_L3_ADMIT_TABLE,
-                         selector, DefaultTrafficTreatment.builder()
+                         selectorBuilder.build(), DefaultTrafficTreatment.builder()
                                  .piTableAction(action)
                                  .build()
                 )
