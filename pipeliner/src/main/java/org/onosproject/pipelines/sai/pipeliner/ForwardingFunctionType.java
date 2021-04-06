@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package org.onosproject.pipelines.sai;
+package org.onosproject.pipelines.sai.pipeliner;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -21,7 +21,12 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.onosproject.net.flow.criteria.Criterion.Type.*;
-import static org.onosproject.pipelines.sai.SaiPipelineCommons.*;
+import static org.onosproject.pipelines.sai.pipeliner.SaiPipelineCommons.MATCH_ETH_DST_NONE;
+import static org.onosproject.pipelines.sai.pipeliner.SaiPipelineCommons.MATCH_ETH_TYPE_IPV4;
+import static org.onosproject.pipelines.sai.pipeliner.SaiPipelineCommons.MATCH_ETH_TYPE_IPV6;
+import static org.onosproject.pipelines.sai.pipeliner.SaiPipelineCommons.MATCH_ETH_TYPE_MPLS;
+import static org.onosproject.pipelines.sai.pipeliner.SaiPipelineCommons.MATCH_MPLS_BOS_FALSE;
+import static org.onosproject.pipelines.sai.pipeliner.SaiPipelineCommons.MATCH_MPLS_BOS_TRUE;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**

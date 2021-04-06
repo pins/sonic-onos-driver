@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package org.onosproject.pipelines.sai;
+package org.onosproject.pipelines.sai.pipeliner;
 
 import org.onlab.packet.EthType;
 import org.onlab.packet.MacAddress;

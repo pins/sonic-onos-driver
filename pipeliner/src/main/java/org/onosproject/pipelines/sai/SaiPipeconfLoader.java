@@ -5,6 +5,7 @@
 
 package org.onosproject.pipelines.sai;
 
+import com.google.common.collect.ImmutableList;
 import org.onosproject.core.CoreService;
 import org.onosproject.net.behaviour.Pipeliner;
 import org.onosproject.net.pi.model.DefaultPiPipeconf;
@@ -15,6 +16,7 @@ import org.onosproject.net.pi.model.PiPipelineModel;
 import org.onosproject.net.pi.service.PiPipeconfService;
 import org.onosproject.p4runtime.model.P4InfoParser;
 import org.onosproject.p4runtime.model.P4InfoParserException;
+import org.onosproject.pipelines.sai.pipeliner.SaiPipeliner;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Deactivate;
@@ -23,10 +25,15 @@ import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.slf4j.Logger;
 
 import java.net.URL;
+import java.util.Collection;
 
 import static org.onosproject.net.pi.model.PiPipeconf.ExtensionType.*;
 import static org.slf4j.LoggerFactory.getLogger;
 
+/**
+ * Component responsible of building and registering pipeconfs at app
+ * activation.
+ */
 
 @Component(immediate = true)
 public final class SaiPipeconfLoader {
@@ -34,13 +41,19 @@ public final class SaiPipeconfLoader {
     private static Logger log = getLogger(SaiPipeconfLoader.class);
 
     private static final String APP_NAME = "org.onosproject.pipelines.sai";
-    private static final PiPipeconfId SAI_PIPECONF_ID = new PiPipeconfId("org.onosproject.pipelines.sai");
-    private static final String SAI_JSON_PATH = "/bmv2.json";
+    private static final PiPipeconfId SAI_PIPECONF_ID =
+            new PiPipeconfId("org.onosproject.pipelines.sai");
+    private static final PiPipeconfId FIXED_SAI_PIPECONF_ID =
+            new PiPipeconfId("org.onosproject.pipelines.sai_fixed");
+    //private static final String SAI_JSON_PATH = "/bmv2.json";
     private static final String SAI_P4INFO = "/p4info.txt";
+    private static final String FIXED_SAI_P4INFO = "/p4info_fixed.txt";
     // TODO (daniele): Is the CPU port really needed for sai.p4?
-    private static final String CPU_PORT = "/cpu_port.txt";
+    //private static final String CPU_PORT = "/cpu_port.txt";
 
-    public static final PiPipeconf SAI_PIPECONF = buildSaiPipeconf();
+    public static final Collection<PiPipeconf> PIPECONFS = ImmutableList.of(
+            buildPipeconf(SAI_PIPECONF_ID, SAI_P4INFO),
+            buildPipeconf(FIXED_SAI_PIPECONF_ID, FIXED_SAI_P4INFO));
 
     @Reference(cardinality = ReferenceCardinality.MANDATORY)
     private PiPipeconfService piPipeconfService;
@@ -53,29 +66,31 @@ public final class SaiPipeconfLoader {
         log.info("Started");
         coreService.registerApplication(APP_NAME);
         // Registers all pipeconf at component activation.
-        piPipeconfService.register(SAI_PIPECONF);
+        PIPECONFS.forEach(piPipeconfService::register);
     }
 
     @Deactivate
     public void deactivate() {
-        piPipeconfService.unregister(SAI_PIPECONF_ID);
+        PIPECONFS.stream()
+                .map(PiPipeconf::id)
+                .forEach(piPipeconfService::unregister);
         log.info("Stopped");
     }
 
-    private static PiPipeconf buildSaiPipeconf() {
-        final URL jsonUrl = SaiPipeconfLoader.class.getResource(SAI_JSON_PATH);
-        final URL p4InfoUrl = SaiPipeconfLoader.class.getResource(SAI_P4INFO);
-        final URL cpuPortUrl = SaiPipeconfLoader.class.getResource(CPU_PORT);
+    private static PiPipeconf buildPipeconf(PiPipeconfId piPipeconfId, String p4Info) {
+        //final URL jsonUrl = SaiPipeconfLoader.class.getResource(SAI_JSON_PATH);
+        final URL p4InfoUrl = SaiPipeconfLoader.class.getResource(p4Info);
+        //final URL cpuPortUrl = SaiPipeconfLoader.class.getResource(CPU_PORT);
 
         return DefaultPiPipeconf.builder()
-                .withId(SAI_PIPECONF_ID)
+                .withId(piPipeconfId)
                 .withPipelineModel(parseP4Info(p4InfoUrl))
                 .addBehaviour(PiPipelineInterpreter.class, SaiInterpreter.class)
                 .addBehaviour(Pipeliner.class, SaiPipeliner.class)
                 .addExtension(P4_INFO_TEXT, p4InfoUrl)
                 // Not actually needed if we do not plan to support BMv2
-                .addExtension(BMV2_JSON, jsonUrl)
-                .addExtension(CPU_PORT_TXT, cpuPortUrl)
+                //.addExtension(BMV2_JSON, jsonUrl)
+                //.addExtension(CPU_PORT_TXT, cpuPortUrl)
                 .build();
     }
 

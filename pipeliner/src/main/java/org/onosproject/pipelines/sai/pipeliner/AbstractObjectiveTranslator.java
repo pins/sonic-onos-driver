@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package org.onosproject.pipelines.sai;
+package org.onosproject.pipelines.sai.pipeliner;
 
 import org.onosproject.net.DeviceId;
 import org.onosproject.net.flow.DefaultFlowRule;
@@ -17,6 +17,8 @@ import org.onosproject.net.flowobjective.ObjectiveError;
 import org.onosproject.net.pi.model.PiPipelineInterpreter;
 import org.onosproject.net.pi.model.PiTableId;
 import org.onosproject.net.pi.runtime.PiAction;
+import org.onosproject.pipelines.sai.SaiCapabilities;
+import org.onosproject.pipelines.sai.SaiInterpreter;
 import org.slf4j.Logger;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -30,12 +32,15 @@ abstract class AbstractObjectiveTranslator<T extends Objective> {
 
     protected final Logger log = getLogger(this.getClass());
 
+    protected final SaiCapabilities capabilities;
     protected final DeviceId deviceId;
+
     protected final PiPipelineInterpreter interpreter;
 
-    public AbstractObjectiveTranslator(DeviceId deviceId) {
+    public AbstractObjectiveTranslator(DeviceId deviceId, SaiCapabilities capabilities) {
         this.deviceId = checkNotNull(deviceId);
-        this.interpreter = new SaiInterpreter();
+        this.capabilities = checkNotNull(capabilities);
+        this.interpreter = new SaiInterpreter(capabilities);
     }
 
     public ObjectiveTranslation translate(T obj) {

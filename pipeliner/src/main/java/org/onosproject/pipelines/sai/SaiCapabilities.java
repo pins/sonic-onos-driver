@@ -5,6 +5,7 @@
 
 package org.onosproject.pipelines.sai;
 
+import org.onosproject.net.pi.model.PiMatchFieldId;
 import org.onosproject.net.pi.model.PiPipeconf;
 import org.slf4j.Logger;
 
@@ -24,5 +25,18 @@ public class SaiCapabilities {
 
     public SaiCapabilities(PiPipeconf pipeconf) {
         this.pipeconf = checkNotNull(pipeconf);
+    }
+
+    public boolean hasIngressAcl() {
+        return pipeconf.pipelineModel()
+                .table(SaiConstants.INGRESS_ACL_INGRESS_ACL_INGRESS_TABLE)
+                .isPresent();
+    }
+
+    public boolean hasAclField(PiMatchFieldId matchFieldId) {
+        return hasIngressAcl() &&
+                pipeconf.pipelineModel()
+                        .table(SaiConstants.INGRESS_ACL_INGRESS_ACL_INGRESS_TABLE)
+                        .get().matchField(matchFieldId).isPresent();
     }
 }

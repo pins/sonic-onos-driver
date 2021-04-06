@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package org.onosproject.pipelines.sai;
+package org.onosproject.pipelines.sai.pipeliner;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -15,7 +15,6 @@ import org.onosproject.net.behaviour.NextGroup;
 import org.onosproject.net.behaviour.Pipeliner;
 import org.onosproject.net.behaviour.PipelinerContext;
 import org.onosproject.net.device.DeviceService;
-import org.onosproject.net.driver.AbstractHandlerBehaviour;
 import org.onosproject.net.flow.FlowRule;
 import org.onosproject.net.flow.FlowRuleOperations;
 import org.onosproject.net.flow.FlowRuleService;
@@ -30,6 +29,8 @@ import org.onosproject.net.flowobjective.NextObjective;
 import org.onosproject.net.flowobjective.NextTreatment;
 import org.onosproject.net.flowobjective.Objective;
 import org.onosproject.net.flowobjective.ObjectiveError;
+import org.onosproject.pipelines.sai.AbstractSaiHandlerBehavior;
+import org.onosproject.pipelines.sai.SaiConstants;
 import org.onosproject.store.serializers.KryoNamespaces;
 import org.slf4j.Logger;
 
@@ -46,7 +47,7 @@ import static org.onosproject.pipelines.sai.SaiPipelineUtils.outputPort;
 import static org.slf4j.LoggerFactory.getLogger;
 
 
-public class SaiPipeliner extends AbstractHandlerBehaviour implements Pipeliner {
+public class SaiPipeliner extends AbstractSaiHandlerBehavior implements Pipeliner {
 
     private static final Logger log = getLogger(SaiPipeliner.class);
 
@@ -82,10 +83,12 @@ public class SaiPipeliner extends AbstractHandlerBehaviour implements Pipeliner 
         this.flowObjectiveStore = context.directory().get(FlowObjectiveStore.class);
         this.deviceService = context.directory().get(DeviceService.class);
 
-        forwardingTranslator = new ForwardingObjectiveTranslator(deviceId);
-        nextTranslator = new NextObjectiveTranslator(deviceId, flowObjectiveStore,
-                                                     deviceService);
-        filteringTranslator = new FilteringObjectiveTranslator(deviceId, deviceService);
+        forwardingTranslator = new ForwardingObjectiveTranslator(
+                deviceId, capabilities);
+        nextTranslator = new NextObjectiveTranslator(
+                deviceId, capabilities, flowObjectiveStore, deviceService);
+        filteringTranslator = new FilteringObjectiveTranslator(
+                deviceId, capabilities, deviceService);
     }
 
     @Override

@@ -1,4 +1,4 @@
-package org.onosproject.pipelines.sai;
+package org.onosproject.pipelines.sai.pipeliner;
 
 import org.onlab.packet.MacAddress;
 import org.onosproject.net.DeviceId;
@@ -15,6 +15,8 @@ import org.onosproject.net.flow.criteria.PortCriterion;
 import org.onosproject.net.flowobjective.FilteringObjective;
 import org.onosproject.net.flowobjective.ObjectiveError;
 import org.onosproject.net.pi.runtime.PiAction;
+import org.onosproject.pipelines.sai.SaiCapabilities;
+import org.onosproject.pipelines.sai.SaiConstants;
 
 import static java.lang.String.format;
 import static org.onosproject.pipelines.sai.SaiPipelineUtils.criterion;
@@ -24,8 +26,10 @@ public class FilteringObjectiveTranslator
 
     private DeviceService deviceService;
 
-    public FilteringObjectiveTranslator(DeviceId deviceId, DeviceService deviceService) {
-        super(deviceId);
+    public FilteringObjectiveTranslator(DeviceId deviceId,
+                                        SaiCapabilities capabilities,
+                                        DeviceService deviceService) {
+        super(deviceId, capabilities);
         this.deviceService = deviceService;
     }
 

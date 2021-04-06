@@ -15,7 +15,6 @@ import org.onosproject.net.DeviceId;
 import org.onosproject.net.Port;
 import org.onosproject.net.PortNumber;
 import org.onosproject.net.device.DeviceService;
-import org.onosproject.net.driver.AbstractHandlerBehaviour;
 import org.onosproject.net.flow.TrafficTreatment;
 import org.onosproject.net.flow.criteria.Criterion;
 import org.onosproject.net.flow.instructions.Instructions;
@@ -46,7 +45,8 @@ import static org.onosproject.pipelines.sai.SaiConstants.*;
 /**
  * Pipeline interpreter for SAI.
  */
-public class SaiInterpreter extends AbstractHandlerBehaviour implements PiPipelineInterpreter {
+public class SaiInterpreter extends AbstractSaiHandlerBehavior
+        implements PiPipelineInterpreter {
 
     // N.B.: DO NOT add the IN_PORT inside the criterion map. We don't want to
     //  use the ONOS criterion translation logic for IN_PORT criterion
@@ -77,6 +77,19 @@ public class SaiInterpreter extends AbstractHandlerBehaviour implements PiPipeli
                     .build();
     public static final byte ZERO_BIT = (byte) 0b0;
 
+    /**
+     * Creates a new instance of this behavior with the given capabilities.
+     *
+     * @param capabilities capabilities
+     */
+    public SaiInterpreter(SaiCapabilities capabilities) {
+        super(capabilities);
+    }
+
+    /**
+     * Create a new instance of this behaviour. Used by the abstract projectable
+     * model (i.e., {@link org.onosproject.net.Device#as(Class)}.
+     */
     public SaiInterpreter() {
         super();
     }

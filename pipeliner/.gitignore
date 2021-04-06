@@ -1,4 +1,3 @@
 src/main/resources/*
-!src/main/resources/cpu_port.txt
 !src/main/resources/p4info.txt
-!src/main/resources/p4info_w_acl.txt
+!src/main/resources/p4info_fixed.txt

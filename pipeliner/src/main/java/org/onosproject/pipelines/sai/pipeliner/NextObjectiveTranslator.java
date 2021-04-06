@@ -1,4 +1,4 @@
-package org.onosproject.pipelines.sai;
+package org.onosproject.pipelines.sai.pipeliner;
 
 import com.google.common.collect.Lists;
 import org.apache.commons.lang3.tuple.Pair;
@@ -24,6 +24,8 @@ import org.onosproject.net.flowobjective.ObjectiveError;
 import org.onosproject.net.pi.runtime.PiAction;
 import org.onosproject.net.pi.runtime.PiActionParam;
 import org.onosproject.net.pi.runtime.PiActionProfileActionSet;
+import org.onosproject.pipelines.sai.SaiCapabilities;
+import org.onosproject.pipelines.sai.SaiConstants;
 
 import java.util.Collection;
 import java.util.List;
@@ -39,7 +41,7 @@ import static org.onosproject.pipelines.sai.SaiPipelineUtils.ethSrc;
 import static org.onosproject.pipelines.sai.SaiPipelineUtils.isL3NextObj;
 import static org.onosproject.pipelines.sai.SaiPipelineUtils.isMplsObj;
 import static org.onosproject.pipelines.sai.SaiPipelineUtils.outputPort;
-import static org.onosproject.pipelines.sai.SaiPipeliner.KRYO;
+import static org.onosproject.pipelines.sai.pipeliner.SaiPipeliner.KRYO;
 
 public class NextObjectiveTranslator
         extends AbstractObjectiveTranslator<NextObjective> {
@@ -47,9 +49,10 @@ public class NextObjectiveTranslator
     private final FlowObjectiveStore flowObjectiveStore;
     private final DeviceService deviceService;
 
-    NextObjectiveTranslator(DeviceId deviceId, FlowObjectiveStore flowObjectiveStore,
+    NextObjectiveTranslator(DeviceId deviceId, SaiCapabilities capabilities,
+                            FlowObjectiveStore flowObjectiveStore,
                             DeviceService deviceService) {
-        super(deviceId);
+        super(deviceId, capabilities);
         this.flowObjectiveStore = flowObjectiveStore;
         this.deviceService = deviceService;
     }
@@ -186,24 +189,26 @@ public class NextObjectiveTranslator
         switch (obj.op()) {
             case REMOVE:
             case REMOVE_FROM_EXISTING:
-                resultBuilder.addFlowRule(wcmpFlowRule);
-                resultBuilder.newStage();
-                resultBuilder.addFlowRules(nextHopEntries);
-                resultBuilder.newStage();
-                resultBuilder.addFlowRules(neighborEntries);
-                resultBuilder.newStage();
-                resultBuilder.addFlowRules(routerInterfaceEntries);
+                resultBuilder
+                        .addFlowRule(wcmpFlowRule)
+                        .newStage()
+                        .addFlowRules(nextHopEntries)
+                        .newStage()
+                        .addFlowRules(neighborEntries)
+                        .newStage()
+                        .addFlowRules(routerInterfaceEntries);
                 break;
             case ADD:
             case MODIFY:
             case ADD_TO_EXISTING:
-                resultBuilder.addFlowRules(routerInterfaceEntries);
-                resultBuilder.newStage();
-                resultBuilder.addFlowRules(neighborEntries);
-                resultBuilder.newStage();
-                resultBuilder.addFlowRules(nextHopEntries);
-                resultBuilder.newStage();
-                resultBuilder.addFlowRule(wcmpFlowRule);
+                resultBuilder
+                        .addFlowRules(routerInterfaceEntries)
+                        .newStage()
+                        .addFlowRules(neighborEntries)
+                        .newStage()
+                        .addFlowRules(nextHopEntries)
+                        .newStage()
+                        .addFlowRule(wcmpFlowRule);
                 break;
             default:
                 log.error("Unsuppored NextObjective operation: {}", obj.op());

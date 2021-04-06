@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package org.onosproject.pipelines.sai;
+package org.onosproject.pipelines.sai.pipeliner;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -32,6 +32,9 @@ import org.onosproject.net.pi.model.PiMatchFieldId;
 import org.onosproject.net.pi.model.PiTableId;
 import org.onosproject.net.pi.runtime.PiAction;
 import org.onosproject.net.pi.runtime.PiActionParam;
+import org.onosproject.pipelines.sai.SaiCapabilities;
+import org.onosproject.pipelines.sai.SaiConstants;
+import org.onosproject.pipelines.sai.SaiPipelineUtils;
 
 import java.util.List;
 import java.util.Map;
@@ -78,8 +81,8 @@ public class ForwardingObjectiveTranslator
             .build();
 
 
-    ForwardingObjectiveTranslator(DeviceId deviceId) {
-        super(deviceId);
+    ForwardingObjectiveTranslator(DeviceId deviceId, SaiCapabilities capabilities) {
+        super(deviceId, capabilities);
     }
 
     @Override
@@ -91,9 +94,11 @@ public class ForwardingObjectiveTranslator
                 processSpecificFwd(obj, resultBuilder);
                 break;
             case VERSATILE:
-                // TODO (daniele): reactivate ACL rules generation.
-                //log.warn("Skipping ACL rules for now!");
-                processVersatileFwd(obj, resultBuilder);
+                if (capabilities.hasIngressAcl()) {
+                    processVersatileFwd(obj, resultBuilder);
+                } else {
+                    log.warn("ACL INGRESS table is not supported by device {}", deviceId);
+                }
                 break;
             case EGRESS:
             default:
@@ -220,6 +225,8 @@ public class ForwardingObjectiveTranslator
 
     void aclRule(ForwardingObjective obj, ObjectiveTranslation.Builder resultBuilder)
             throws SaiPipelinerException {
+        // TODO: I should always push PiCriterion instead of relying on SaiInterpreter
+        //  mapCriterionType method called from the PiFlowRuleInterpreter.
         // ACL Punt Table in SAI supports PUNT or COPY to CPU.
         if (obj.nextId() == null && obj.treatment() != null) {
             final TrafficTreatment treatment = obj.treatment();
@@ -238,6 +245,7 @@ public class ForwardingObjectiveTranslator
                     // Action is clone packet to the CPU
                     aclAction = PiAction.builder()
                             .withId(SaiConstants.INGRESS_ACL_INGRESS_COPY)
+                            .withParameter(new PiActionParam(SaiConstants.QOS_QUEUE, "0x1"))
                             .build();
                 }
                 final TrafficTreatment piTreatment = DefaultTrafficTreatment.builder()
