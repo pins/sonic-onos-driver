@@ -25,11 +25,11 @@ deps:
 	docker pull ${maven_img}
 	docker pull ${P4C_IMG}
 
-local_build: src/main/resources/p4info.txt src/main/resources/bmv2.json
+local_build: src/main/resources/p4info.txt
 	$(info *** Building ONOS app...)
 	mvn clean install
 
-build: src/main/resources/p4info.txt src/main/resources/bmv2.json _create_mvn_container _mvn_package
+build: src/main/resources/p4info.txt _create_mvn_container _mvn_package
 	$(info *** ONOS app .oar package created succesfully)
 	@ls -1 ./target/*.oar
 
@@ -44,7 +44,7 @@ _mvn_package:
 	@mkdir -p target
 	@docker start -a -i ${mvn_build_container_name}
 
-build-sai-p4 src/main/resources/p4info.txt src/main/resources/bmv2.json:
+build-sai-p4 src/main/resources/p4info.txt:
 	$(info *** Building sai-main.p4)
 	docker run --rm -w /p4src -v ${P4C_SRC_DIR}:/p4src \
 		-v ${P4C_OUT_DIR}:/p4c-out ${P4C_IMG} \
@@ -68,10 +68,18 @@ graphs-sai-p4:
 	done
 	@echo "*** google/middleblock.p4 graphs available in src/main/resources/graphs"
 
+# Run this target on P4Info updates. It creates the SaiConstants.java from the
+# file src/main/resources/p4info.txt.
+gen-constants:
+	$(info *** Creating SaiConstants.java from src/main/resources/p4info.txt)
+	docker run --rm -v $(shell pwd)/..:/sonic-onos-driver \
+		-w /sonic-onos-driver --entrypoint ./utils/gen_p4_const.py \
+		opennetworking/p4mn:latest Sai ./pipeliner/src/main/resources/p4info.txt \
+		-o ./pipeliner/src/main/java/org/onosproject/pipelines/sai/SaiConstants.java \
+		--with-package-path org.onosproject.pipelines.sai
+
 clean:
 	@-docker rm ${mvn_build_container_name} > /dev/null
 	@-rm -rf target
 	@-rm -r ${P4C_OUT_DIR}/graphs
-	@-rm ${P4C_OUT_DIR}/_pp.p4
-	@-rm ${P4C_OUT_DIR}/bmv2.json
 	@-rm ${P4C_OUT_DIR}/p4info.txt

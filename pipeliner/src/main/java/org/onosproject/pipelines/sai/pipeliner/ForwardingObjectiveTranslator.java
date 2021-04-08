@@ -53,6 +53,8 @@ import static org.onosproject.pipelines.sai.SaiPipelineUtils.criterionNotNull;
 public class ForwardingObjectiveTranslator
         extends AbstractObjectiveTranslator<ForwardingObjective> {
 
+    private static final String DEFAULT_VRF_ID = "vrf-0";
+
     // Supported ACL Criterion
     private static final Set<Criterion.Type> ACL_SUPPORTED_CRITERIA = ImmutableSet.of(
             Criterion.Type.ETH_TYPE,
@@ -178,7 +180,7 @@ public class ForwardingObjectiveTranslator
         final TrafficSelector selector = DefaultTrafficSelector.builder()
                 .matchPi(PiCriterion.builder()
                                  .matchExact(SaiConstants.HDR_VRF_ID,
-                                             SaiConstants.DEFAULT_VRF_ID)
+                                             DEFAULT_VRF_ID)
                                  .matchLpm(IP_CRITERION_MAP.get(ipDstCriterion.type()),
                                            ipDstCriterion.ip().address().toOctets(),
                                            ipDstCriterion.ip().prefixLength())
