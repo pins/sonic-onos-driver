@@ -29,6 +29,8 @@ import org.onosproject.net.flowobjective.NextObjective;
 import org.onosproject.net.flowobjective.NextTreatment;
 import org.onosproject.net.flowobjective.Objective;
 import org.onosproject.net.flowobjective.ObjectiveError;
+import org.onosproject.net.group.GroupDescription;
+import org.onosproject.net.group.GroupService;
 import org.onosproject.pipelines.sai.AbstractSaiHandlerBehavior;
 import org.onosproject.pipelines.sai.SaiConstants;
 import org.onosproject.store.serializers.KryoNamespaces;
@@ -59,6 +61,7 @@ public class SaiPipeliner extends AbstractSaiHandlerBehavior implements Pipeline
     private DeviceId deviceId;
 
     private FlowRuleService flowRuleService;
+    private GroupService groupService;
     private FlowObjectiveStore flowObjectiveStore;
     private DeviceService deviceService;
 
@@ -80,6 +83,7 @@ public class SaiPipeliner extends AbstractSaiHandlerBehavior implements Pipeline
     public void init(DeviceId deviceId, PipelinerContext context) {
         this.deviceId = deviceId;
         this.flowRuleService = context.directory().get(FlowRuleService.class);
+        this.groupService = context.directory().get(GroupService.class);
         this.flowObjectiveStore = context.directory().get(FlowObjectiveStore.class);
         this.deviceService = context.directory().get(DeviceService.class);
 
@@ -124,11 +128,56 @@ public class SaiPipeliner extends AbstractSaiHandlerBehavior implements Pipeline
             fail(obj, result.error().get());
             return;
         }
+        // TODO: groups are not actually needed for PINS
+        processGroups(obj, result.groups());
         processFlows(obj, result.stages());
         if (obj instanceof NextObjective) {
             handleNextGroup((NextObjective) obj);
         }
         success(obj);
+    }
+
+    private void processGroups(Objective objective, Collection<GroupDescription> groups) {
+        // TODO: groups are not actually needed for PINS
+        if (groups.isEmpty()) {
+            return;
+        }
+
+        if (log.isTraceEnabled()) {
+            log.trace("Objective {} -> Groups {}", objective, groups);
+        }
+
+        switch (objective.op()) {
+            case ADD:
+                groups.forEach(groupService::addGroup);
+                break;
+//            case REMOVE:
+//                groups.forEach(group -> groupService.removeGroup(
+//                        deviceId, group.appCookie(), objective.appId()));
+//                break;
+//            case ADD_TO_EXISTING:
+//                groups.forEach(group -> groupService.addBucketsToGroup(
+//                        deviceId, group.appCookie(), group.buckets(),
+//                        group.appCookie(), group.appId())
+//                );
+//                break;
+//            case REMOVE_FROM_EXISTING:
+//                groups.forEach(group -> groupService.removeBucketsFromGroup(
+//                        deviceId, group.appCookie(), group.buckets(),
+//                        group.appCookie(), group.appId())
+//                );
+//                break;
+//            case MODIFY:
+//                // Modify is only supported for simple next objective
+//                // Replace group bucket directly
+//                groups.forEach(group -> groupService.setBucketsForGroup(
+//                        deviceId, group.appCookie(), group.buckets(),
+//                        group.appCookie(), group.appId())
+//                );
+//                break;
+            default:
+                log.warn("Unsupported Objective operation {}", objective.op());
+        }
     }
 
     private void processFlows(Objective objective, ImmutableList<ImmutableSet<FlowRule>> flowRulesStages) {
@@ -194,6 +243,7 @@ public class SaiPipeliner extends AbstractSaiHandlerBehavior implements Pipeline
                 log.error("Unknown NextObjective operation '{}'", obj.op());
         }
     }
+
     private void removeNextGroup(NextObjective obj) {
         final NextGroup removed = flowObjectiveStore.removeNextGroup(obj.id());
         if (removed == null) {

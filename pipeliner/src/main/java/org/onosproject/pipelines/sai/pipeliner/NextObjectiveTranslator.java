@@ -6,6 +6,8 @@
 package org.onosproject.pipelines.sai.pipeliner;
 
 import com.google.common.collect.Lists;
+import com.google.common.hash.Hashing;
+import com.google.common.primitives.Bytes;
 import org.apache.commons.lang3.tuple.Pair;
 import org.glassfish.jersey.internal.guava.Sets;
 import org.onlab.packet.Ip6Address;
@@ -40,7 +42,6 @@ import java.util.stream.Collectors;
 
 import static java.lang.String.format;
 import static org.onlab.packet.IPv6.getLinkLocalAddress;
-import static org.onosproject.pipelines.sai.SaiPipelineUtils.buildWcmpTableNextHopAction;
 import static org.onosproject.pipelines.sai.SaiPipelineUtils.ethDst;
 import static org.onosproject.pipelines.sai.SaiPipelineUtils.ethSrc;
 import static org.onosproject.pipelines.sai.SaiPipelineUtils.isL3NextObj;
@@ -50,6 +51,8 @@ import static org.onosproject.pipelines.sai.pipeliner.SaiPipeliner.KRYO;
 
 public class NextObjectiveTranslator
         extends AbstractObjectiveTranslator<NextObjective> {
+
+    private static final int ID_BYTES_LENGTH = 24;
 
     private final FlowObjectiveStore flowObjectiveStore;
     private final DeviceService deviceService;
@@ -98,8 +101,6 @@ public class NextObjectiveTranslator
         log.warn("Unsupported NextObjective '{}', currently only L3 Next " +
                          "Objective are supported", obj);
     }
-
-
 
     private void hashedNext(NextObjective obj,
                             ObjectiveTranslation.Builder resultBuilder)
@@ -227,17 +228,37 @@ public class NextObjectiveTranslator
                                        String nextHopId,
                                        NextObjective obj)
             throws SaiPipelinerException {
-        final PiCriterion routerInterfaceIdCriterion = PiCriterion.builder()
-                .matchExact(SaiConstants.HDR_NEXTHOP_ID, nextHopId)
-                .build();
+        final PiCriterion.Builder nextHopIdCriterionBuilder = PiCriterion.builder();
+        // If the underlying pipeline doesn't support P4Runtime translation (e.g., BMv2),
+        // we should fit the nextHopId into a 192 bits ID (using sha1-->160bits)
+        if (capabilities.isMatchFieldString(SaiConstants.INGRESS_ROUTING_NEXTHOP_TABLE, SaiConstants.HDR_NEXTHOP_ID)) {
+            nextHopIdCriterionBuilder.matchExact(SaiConstants.HDR_NEXTHOP_ID, nextHopId);
+        } else {
+            nextHopIdCriterionBuilder.matchExact(
+                    SaiConstants.HDR_NEXTHOP_ID,
+                    fromStringIdToBits(nextHopId));
+        }
         final TrafficSelector selector = DefaultTrafficSelector.builder()
-                .matchPi(routerInterfaceIdCriterion)
+                .matchPi(nextHopIdCriterionBuilder.build())
                 .build();
-
-        final List<PiActionParam> actionParams = Lists.newArrayList(
-                new PiActionParam(SaiConstants.ROUTER_INTERFACE_ID, routerInterfaceId),
-                new PiActionParam(SaiConstants.NEIGHBOR_ID, neighborId)
-        );
+        final List<PiActionParam> actionParams = Lists.newArrayList();
+        if (capabilities.isActionParamString(SaiConstants.INGRESS_ROUTING_NEXTHOP_TABLE,
+                                             SaiConstants.INGRESS_ROUTING_SET_NEXTHOP,
+                                             SaiConstants.ROUTER_INTERFACE_ID)) {
+            actionParams.add(new PiActionParam(SaiConstants.ROUTER_INTERFACE_ID,
+                                               routerInterfaceId));
+        } else {
+            actionParams.add(new PiActionParam(SaiConstants.ROUTER_INTERFACE_ID,
+                                               fromStringIdToBits(routerInterfaceId)));
+        }
+        if (capabilities.isActionParamString(SaiConstants.INGRESS_ROUTING_NEXTHOP_TABLE,
+                                             SaiConstants.INGRESS_ROUTING_SET_NEXTHOP,
+                                             SaiConstants.NEIGHBOR_ID)) {
+            actionParams.add(new PiActionParam(SaiConstants.NEIGHBOR_ID, neighborId));
+        } else {
+            actionParams.add(new PiActionParam(SaiConstants.NEIGHBOR_ID,
+                                               fromStringIdToBits(neighborId)));
+        }
         final TrafficTreatment treatment = DefaultTrafficTreatment.builder()
                 .piTableAction(
                         PiAction.builder()
@@ -253,18 +274,31 @@ public class NextObjectiveTranslator
                                                MacAddress srcMac,
                                                NextObjective obj)
             throws SaiPipelinerException {
-
-        final PiCriterion routerInterfaceIdCriterion = PiCriterion.builder()
-                .matchExact(SaiConstants.HDR_ROUTER_INTERFACE_ID, routerInterfaceId)
-                .build();
+        final PiCriterion.Builder rifIdCriterionBuilder = PiCriterion.builder();
+        if (capabilities.isMatchFieldString(SaiConstants.INGRESS_ROUTING_ROUTER_INTERFACE_TABLE,
+                                            SaiConstants.HDR_ROUTER_INTERFACE_ID)) {
+            rifIdCriterionBuilder.matchExact(SaiConstants.HDR_ROUTER_INTERFACE_ID,
+                                             routerInterfaceId);
+        } else {
+            rifIdCriterionBuilder.matchExact(SaiConstants.HDR_ROUTER_INTERFACE_ID,
+                                             fromStringIdToBits(routerInterfaceId));
+        }
         final TrafficSelector selector = DefaultTrafficSelector.builder()
-                .matchPi(routerInterfaceIdCriterion)
+                .matchPi(rifIdCriterionBuilder.build())
                 .build();
 
         final List<PiActionParam> actionParams = Lists.newArrayList(
-                new PiActionParam(SaiConstants.SRC_MAC, srcMac.toBytes()),
-                new PiActionParam(SaiConstants.PORT, outputPort.name())
-        );
+                new PiActionParam(SaiConstants.SRC_MAC, srcMac.toBytes()));
+        // For target not supporting P4Runtime translation, push the PORT number
+        if (capabilities.isActionParamString(
+                SaiConstants.INGRESS_ROUTING_ROUTER_INTERFACE_TABLE,
+                SaiConstants.INGRESS_ROUTING_SET_PORT_AND_SRC_MAC,
+                SaiConstants.PORT)) {
+            actionParams.add(new PiActionParam(SaiConstants.PORT, outputPort.name()));
+        } else {
+            actionParams.add(new PiActionParam(SaiConstants.PORT, outputPort.toLong()));
+        }
+
         final TrafficTreatment treatment = DefaultTrafficTreatment.builder()
                 .piTableAction(
                         PiAction.builder()
@@ -282,12 +316,27 @@ public class NextObjectiveTranslator
                                          MacAddress dstMac,
                                          NextObjective obj)
             throws SaiPipelinerException {
-        final PiCriterion routerInterfaceIdCriterion = PiCriterion.builder()
-                .matchExact(SaiConstants.HDR_ROUTER_INTERFACE_ID, routerInterfaceId)
-                .matchExact(SaiConstants.HDR_NEIGHBOR_ID, neighborId)
-                .build();
+        final PiCriterion.Builder rifIdCriterionBuilder = PiCriterion.builder();
+        if (capabilities.isMatchFieldString(
+                SaiConstants.INGRESS_ROUTING_NEIGHBOR_TABLE,
+                SaiConstants.HDR_ROUTER_INTERFACE_ID)) {
+            rifIdCriterionBuilder.matchExact(SaiConstants.HDR_ROUTER_INTERFACE_ID,
+                                             routerInterfaceId);
+        } else {
+            rifIdCriterionBuilder.matchExact(SaiConstants.HDR_ROUTER_INTERFACE_ID,
+                                             fromStringIdToBits(routerInterfaceId));
+        }
+        if (capabilities.isMatchFieldString(
+                SaiConstants.INGRESS_ROUTING_NEIGHBOR_TABLE,
+                SaiConstants.HDR_NEIGHBOR_ID)) {
+            rifIdCriterionBuilder.matchExact(SaiConstants.HDR_NEIGHBOR_ID,
+                                             neighborId);
+        } else {
+            rifIdCriterionBuilder.matchExact(SaiConstants.HDR_NEIGHBOR_ID,
+                                             fromStringIdToBits(neighborId));
+        }
         final TrafficSelector selector = DefaultTrafficSelector.builder()
-                .matchPi(routerInterfaceIdCriterion)
+                .matchPi(rifIdCriterionBuilder.build())
                 .build();
         final TrafficTreatment treatment = DefaultTrafficTreatment.builder()
                 .piTableAction(
@@ -298,6 +347,25 @@ public class NextObjectiveTranslator
                                 .build())
                 .build();
         return flowRule(obj, SaiConstants.INGRESS_ROUTING_NEIGHBOR_TABLE, selector, treatment);
+    }
+
+    public PiAction buildWcmpTableNextHopAction(String nextHopId) {
+        if (capabilities.isActionParamString(
+                SaiConstants.INGRESS_ROUTING_WCMP_GROUP_TABLE,
+                SaiConstants.INGRESS_ROUTING_SET_NEXTHOP_ID,
+                SaiConstants.NEXTHOP_ID)) {
+            return PiAction.builder()
+                    .withId(SaiConstants.INGRESS_ROUTING_SET_NEXTHOP_ID)
+                    .withParameter(new PiActionParam(SaiConstants.NEXTHOP_ID,
+                                                     nextHopId))
+                    .build();
+        } else {
+            return PiAction.builder()
+                    .withId(SaiConstants.INGRESS_ROUTING_SET_NEXTHOP_ID)
+                    .withParameter(new PiActionParam(SaiConstants.NEXTHOP_ID,
+                                                     fromStringIdToBits(nextHopId)))
+                    .build();
+        }
     }
 
     private TrafficSelector nextIdSelector(int nextId) {
@@ -381,6 +449,19 @@ public class NextObjectiveTranslator
             return outPort;
         }
         return actualPort.number();
+    }
+
+    /**
+     * For targets not supporting P4Runtime translation with sdn strings,
+     * convert the string ID to a byte[].
+     *
+     * @param id The id to convert
+     * @return
+     **/
+    private static byte[] fromStringIdToBits(String id) {
+        return Bytes.ensureCapacity(
+                Hashing.sha1().hashUnencodedChars(id).asBytes(),
+                ID_BYTES_LENGTH, 0x00);
     }
 
 }

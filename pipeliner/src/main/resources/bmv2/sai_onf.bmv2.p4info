@@ -18,6 +18,7 @@ tables {
   match_fields {
     id: 2
     name: "in_port"
+    bitwidth: 9
     match_type: OPTIONAL
     type_name {
       name: "port_id_t"
@@ -46,6 +47,7 @@ tables {
     id: 1
     name: "router_interface_id"
     annotations: "@refers_to(router_interface_table , router_interface_id)"
+    bitwidth: 192
     match_type: EXACT
     type_name {
       name: "router_interface_id_t"
@@ -54,6 +56,7 @@ tables {
   match_fields {
     id: 2
     name: "neighbor_id"
+    bitwidth: 192
     match_type: EXACT
     type_name {
       name: "neighbor_id_t"
@@ -81,6 +84,7 @@ tables {
   match_fields {
     id: 1
     name: "router_interface_id"
+    bitwidth: 192
     match_type: EXACT
     type_name {
       name: "router_interface_id_t"
@@ -108,6 +112,7 @@ tables {
   match_fields {
     id: 1
     name: "nexthop_id"
+    bitwidth: 192
     match_type: EXACT
     type_name {
       name: "nexthop_id_t"
@@ -136,6 +141,7 @@ tables {
   match_fields {
     id: 1
     name: "wcmp_group_id"
+    bitwidth: 192
     match_type: EXACT
     type_name {
       name: "wcmp_group_id_t"
@@ -164,6 +170,7 @@ tables {
   match_fields {
     id: 1
     name: "vrf_id"
+    bitwidth: 192
     match_type: EXACT
     type_name {
       name: "vrf_id_t"
@@ -201,6 +208,7 @@ tables {
   match_fields {
     id: 1
     name: "vrf_id"
+    bitwidth: 192
     match_type: EXACT
     type_name {
       name: "vrf_id_t"
@@ -230,6 +238,161 @@ tables {
 }
 tables {
   preamble {
+    id: 33554688
+    name: "ingress.acl_ingress.acl_ingress_table"
+    alias: "acl_ingress_table"
+    annotations: "@p4runtime_role(\"sdn_controller\")"
+    annotations: "@sai_acl(INGRESS)"
+    annotations: "@entry_restriction(\"\n    // Only allow IP field matches for IP packets.\n    dst_ip::mask != 0 -> is_ipv4 == 1;\n    dst_ipv6::mask != 0 -> is_ipv6 == 1;\n    ip_protocol::mask != 0 -> (is_ip == 1 || is_ipv4 == 1 || is_ipv6 == 1);\n    // Forbid using ether_type for IP packets (by convention, use is_ip* instead).\n    ether_type != 0x0800 && ether_type != 0x86dd;\n    // Only allow icmp_type and icmp_code for ICMP packets\n    icmpv6_type::mask != 0 -> ((is_ip == 1 || is_ipv4 == 1 || is_ipv6 == 1) && ip_protocol == 58);`\n    icmp_type::mask != 0 -> ((is_ip == 1 || is_ipv4 == 1 || is_ipv6 == 1) && ip_protocol == 1);\n    icmp_code::mask != 0 -> ((is_ip == 1 || is_ipv4 == 1 || is_ipv6 == 1) && ip_protocol == 1);\n    // Forbid illegal combinations of IP_TYPE fields.\n    is_ip::mask != 0 -> (is_ipv4::mask == 0 && is_ipv6::mask == 0);\n    is_ipv4::mask != 0 -> (is_ip::mask == 0 && is_ipv6::mask == 0);\n    is_ipv6::mask != 0 -> (is_ip::mask == 0 && is_ipv4::mask == 0);\n    // Forbid unsupported combinations of IP_TYPE fields.\n    is_ipv4::mask != 0 -> (is_ipv4 == 1);\n    is_ipv6::mask != 0 -> (is_ipv6 == 1);\n  \")"
+  }
+  match_fields {
+    id: 1
+    name: "is_ip"
+    annotations: "@sai_field(SAI_ACL_TABLE_ATTR_FIELD_ACL_IP_TYPE / IP)"
+    bitwidth: 1
+    match_type: OPTIONAL
+  }
+  match_fields {
+    id: 2
+    name: "is_ipv4"
+    annotations: "@sai_field(SAI_ACL_TABLE_ATTR_FIELD_ACL_IP_TYPE / IPV4ANY)"
+    bitwidth: 1
+    match_type: OPTIONAL
+  }
+  match_fields {
+    id: 3
+    name: "is_ipv6"
+    annotations: "@sai_field(SAI_ACL_TABLE_ATTR_FIELD_ACL_IP_TYPE / IPV6ANY)"
+    bitwidth: 1
+    match_type: OPTIONAL
+  }
+  match_fields {
+    id: 4
+    name: "ether_type"
+    annotations: "@sai_field(SAI_ACL_TABLE_ATTR_FIELD_ETHER_TYPE)"
+    bitwidth: 16
+    match_type: TERNARY
+  }
+  match_fields {
+    id: 5
+    name: "dst_mac"
+    annotations: "@sai_field(SAI_ACL_TABLE_ATTR_FIELD_DST_MAC)"
+    annotations: "@format(MAC_ADDRESS)"
+    bitwidth: 48
+    match_type: TERNARY
+  }
+  match_fields {
+    id: 6
+    name: "src_ip"
+    annotations: "@sai_field(SAI_ACL_TABLE_ATTR_FIELD_SRC_IP)"
+    annotations: "@format(IPV4_ADDRESS)"
+    bitwidth: 32
+    match_type: TERNARY
+  }
+  match_fields {
+    id: 7
+    name: "dst_ip"
+    annotations: "@sai_field(SAI_ACL_TABLE_ATTR_FIELD_DST_IP)"
+    annotations: "@format(IPV4_ADDRESS)"
+    bitwidth: 32
+    match_type: TERNARY
+  }
+  match_fields {
+    id: 8
+    name: "src_ipv6"
+    annotations: "@sai_field(SAI_ACL_TABLE_ATTR_FIELD_SRC_IPV6)"
+    annotations: "@format(IPV6_ADDRESS)"
+    bitwidth: 128
+    match_type: TERNARY
+  }
+  match_fields {
+    id: 9
+    name: "dst_ipv6"
+    annotations: "@sai_field(SAI_ACL_TABLE_ATTR_FIELD_DST_IPV6)"
+    annotations: "@format(IPV6_ADDRESS)"
+    bitwidth: 128
+    match_type: TERNARY
+  }
+  match_fields {
+    id: 10
+    name: "ip_protocol"
+    annotations: "@sai_field(SAI_ACL_TABLE_ATTR_FIELD_IP_PROTOCOL)"
+    bitwidth: 8
+    match_type: TERNARY
+  }
+  match_fields {
+    id: 11
+    name: "icmpv6_type"
+    annotations: "@sai_field(SAI_ACL_TABLE_ATTR_FIELD_ICMPV6_TYPE)"
+    bitwidth: 8
+    match_type: TERNARY
+  }
+  match_fields {
+    id: 12
+    name: "icmp_type"
+    annotations: "@sai_field(SAI_ACL_TABLE_ATTR_FIELD_ICMP_TYPE)"
+    bitwidth: 8
+    match_type: TERNARY
+  }
+  match_fields {
+    id: 13
+    name: "icmp_code"
+    annotations: "@sai_field(SAI_ACL_TABLE_ATTR_FIELD_ICMP_CODE)"
+    bitwidth: 8
+    match_type: TERNARY
+  }
+  match_fields {
+    id: 14
+    name: "l4_src_port"
+    annotations: "@sai_field(SAI_ACL_TABLE_ATTR_FIELD_L4_SRC_PORT)"
+    bitwidth: 16
+    match_type: TERNARY
+  }
+  match_fields {
+    id: 15
+    name: "l4_dst_port"
+    annotations: "@sai_field(SAI_ACL_TABLE_ATTR_FIELD_L4_DST_PORT)"
+    bitwidth: 16
+    match_type: TERNARY
+  }
+  match_fields {
+    id: 16
+    name: "in_port"
+    annotations: "@sai_field(SAI_ACL_TABLE_ATTR_FIELD_IN_PORT)"
+    bitwidth: 9
+    match_type: OPTIONAL
+    type_name {
+      name: "port_id_t"
+    }
+  }
+  action_refs {
+    id: 16777473
+    annotations: "@proto_id(1)"
+  }
+  action_refs {
+    id: 16777474
+    annotations: "@proto_id(2)"
+  }
+  action_refs {
+    id: 16777475
+    annotations: "@proto_id(3)"
+  }
+  action_refs {
+    id: 16777476
+    annotations: "@proto_id(4)"
+  }
+  action_refs {
+    id: 21257015
+    annotations: "@defaultonly"
+    scope: DEFAULT_ONLY
+  }
+  const_default_action_id: 21257015
+  direct_resource_ids: 318767362
+  direct_resource_ids: 352321792
+  size: 1024
+}
+tables {
+  preamble {
     id: 33554502
     name: "ingress.mirroring_clone.mirror_session_table"
     alias: "mirror_session_table"
@@ -238,6 +401,7 @@ tables {
   match_fields {
     id: 1
     name: "mirror_session_id"
+    bitwidth: 192
     match_type: EXACT
     type_name {
       name: "mirror_session_id_t"
@@ -265,6 +429,7 @@ tables {
   match_fields {
     id: 1
     name: "mirror_port"
+    bitwidth: 9
     match_type: EXACT
     type_name {
       name: "port_id_t"
@@ -319,6 +484,7 @@ actions {
   params {
     id: 1
     name: "port"
+    bitwidth: 9
     type_name {
       name: "port_id_t"
     }
@@ -341,6 +507,7 @@ actions {
     name: "router_interface_id"
     annotations: "@refers_to(router_interface_table , router_interface_id)"
     annotations: "@refers_to(neighbor_table , router_interface_id)"
+    bitwidth: 192
     type_name {
       name: "router_interface_id_t"
     }
@@ -349,6 +516,7 @@ actions {
     id: 2
     name: "neighbor_id"
     annotations: "@refers_to(neighbor_table , neighbor_id)"
+    bitwidth: 192
     type_name {
       name: "neighbor_id_t"
     }
@@ -364,6 +532,7 @@ actions {
     id: 1
     name: "nexthop_id"
     annotations: "@refers_to(nexthop_table , nexthop_id)"
+    bitwidth: 192
     type_name {
       name: "nexthop_id_t"
     }
@@ -386,8 +555,69 @@ actions {
     id: 1
     name: "wcmp_group_id"
     annotations: "@refers_to(wcmp_group_table , wcmp_group_id)"
+    bitwidth: 192
     type_name {
       name: "wcmp_group_id_t"
+    }
+  }
+}
+actions {
+  preamble {
+    id: 16777473
+    name: "ingress.acl_ingress.copy"
+    alias: "copy"
+    annotations: "@sai_action(SAI_PACKET_ACTION_COPY)"
+  }
+  params {
+    id: 1
+    name: "qos_queue"
+    annotations: "@sai_action_param(QOS_QUEUE)"
+    bitwidth: 192
+    type_name {
+      name: "qos_queue_t"
+    }
+  }
+}
+actions {
+  preamble {
+    id: 16777474
+    name: "ingress.acl_ingress.trap"
+    alias: "trap"
+    annotations: "@sai_action(SAI_PACKET_ACTION_TRAP)"
+  }
+  params {
+    id: 1
+    name: "qos_queue"
+    annotations: "@sai_action_param(QOS_QUEUE)"
+    bitwidth: 192
+    type_name {
+      name: "qos_queue_t"
+    }
+  }
+}
+actions {
+  preamble {
+    id: 16777475
+    name: "ingress.acl_ingress.forward"
+    alias: "forward"
+    annotations: "@sai_action(SAI_PACKET_ACTION_FORWARD)"
+  }
+}
+actions {
+  preamble {
+    id: 16777476
+    name: "ingress.acl_ingress.mirror"
+    alias: "mirror"
+    annotations: "@sai_action(SAI_PACKET_ACTION_FORWARD)"
+  }
+  params {
+    id: 1
+    name: "mirror_session_id"
+    annotations: "@sai_action_param(SAI_ACL_ENTRY_ATTR_ACTION_MIRROR_INGRESS)"
+    annotations: "@refers_to(mirror_session_table , mirror_session_id)"
+    bitwidth: 192
+    type_name {
+      name: "mirror_session_id_t"
     }
   }
 }
@@ -400,6 +630,7 @@ actions {
   params {
     id: 1
     name: "port"
+    bitwidth: 9
     type_name {
       name: "port_id_t"
     }
@@ -462,6 +693,28 @@ action_profiles {
   size: 65536
   max_group_size: 1024
 }
+direct_counters {
+  preamble {
+    id: 318767362
+    name: "ingress.acl_ingress.acl_ingress_counter"
+    alias: "acl_ingress_counter"
+  }
+  spec {
+    unit: BOTH
+  }
+  direct_table_id: 33554688
+}
+direct_meters {
+  preamble {
+    id: 352321792
+    name: "ingress.acl_ingress.acl_ingress_meter"
+    alias: "acl_ingress_meter"
+  }
+  spec {
+    unit: BYTES
+  }
+  direct_table_id: 33554688
+}
 controller_packet_metadata {
   preamble {
     id: 81826293
@@ -472,6 +725,7 @@ controller_packet_metadata {
   metadata {
     id: 1
     name: "ingress_port"
+    bitwidth: 9
     type_name {
       name: "port_id_t"
     }
@@ -479,6 +733,7 @@ controller_packet_metadata {
   metadata {
     id: 2
     name: "target_egress_port"
+    bitwidth: 9
     type_name {
       name: "port_id_t"
     }
@@ -494,6 +749,7 @@ controller_packet_metadata {
   metadata {
     id: 1
     name: "egress_port"
+    bitwidth: 9
     type_name {
       name: "port_id_t"
     }
@@ -513,8 +769,11 @@ type_info {
   new_types {
     key: "mirror_session_id_t"
     value {
-      translated_type {
-        sdn_string {
+      original_type {
+        bitstring {
+          bit {
+            bitwidth: 192
+          }
         }
       }
     }
@@ -522,8 +781,11 @@ type_info {
   new_types {
     key: "neighbor_id_t"
     value {
-      translated_type {
-        sdn_string {
+      original_type {
+        bitstring {
+          bit {
+            bitwidth: 192
+          }
         }
       }
     }
@@ -531,8 +793,11 @@ type_info {
   new_types {
     key: "nexthop_id_t"
     value {
-      translated_type {
-        sdn_string {
+      original_type {
+        bitstring {
+          bit {
+            bitwidth: 192
+          }
         }
       }
     }
@@ -540,8 +805,23 @@ type_info {
   new_types {
     key: "port_id_t"
     value {
-      translated_type {
-        sdn_string {
+      original_type {
+        bitstring {
+          bit {
+            bitwidth: 9
+          }
+        }
+      }
+    }
+  }
+  new_types {
+    key: "qos_queue_t"
+    value {
+      original_type {
+        bitstring {
+          bit {
+            bitwidth: 192
+          }
         }
       }
     }
@@ -549,8 +829,11 @@ type_info {
   new_types {
     key: "router_interface_id_t"
     value {
-      translated_type {
-        sdn_string {
+      original_type {
+        bitstring {
+          bit {
+            bitwidth: 192
+          }
         }
       }
     }
@@ -558,8 +841,11 @@ type_info {
   new_types {
     key: "vrf_id_t"
     value {
-      translated_type {
-        sdn_string {
+      original_type {
+        bitstring {
+          bit {
+            bitwidth: 192
+          }
         }
       }
     }
@@ -567,8 +853,11 @@ type_info {
   new_types {
     key: "wcmp_group_id_t"
     value {
-      translated_type {
-        sdn_string {
+      original_type {
+        bitstring {
+          bit {
+            bitwidth: 192
+          }
         }
       }
     }

@@ -19,8 +19,6 @@ import org.onosproject.net.flowobjective.NextObjective;
 import org.onosproject.net.flowobjective.NextTreatment;
 import org.onosproject.net.pi.model.PiPipelineInterpreter;
 import org.onosproject.net.pi.model.PiTableId;
-import org.onosproject.net.pi.runtime.PiAction;
-import org.onosproject.net.pi.runtime.PiActionParam;
 
 import java.util.Collection;
 import java.util.stream.Stream;
@@ -173,12 +171,5 @@ public final class SaiPipelineUtils {
             throws PiPipelineInterpreter.PiInterpreterException {
         throw new PiPipelineInterpreter.PiInterpreterException(format(
                 "Invalid treatment for table '%s', %s: %s", tableId, explanation, treatment));
-    }
-
-    public static PiAction buildWcmpTableNextHopAction(String nextHopId) {
-        return PiAction.builder()
-                .withId(SaiConstants.INGRESS_ROUTING_SET_NEXTHOP_ID)
-                .withParameter(new PiActionParam(SaiConstants.NEXTHOP_ID, nextHopId))
-                .build();
     }
 }

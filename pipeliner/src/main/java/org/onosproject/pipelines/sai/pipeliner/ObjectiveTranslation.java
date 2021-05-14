@@ -7,13 +7,16 @@ package org.onosproject.pipelines.sai.pipeliner;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import org.onosproject.net.flow.FlowId;
 import org.onosproject.net.flow.FlowRule;
 import org.onosproject.net.flowobjective.ObjectiveError;
+import org.onosproject.net.group.GroupDescription;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -28,11 +31,14 @@ import static java.lang.String.format;
 final class ObjectiveTranslation {
 
     private final ImmutableList<ImmutableSet<FlowRule>> flowRulesStages;
+    private final ImmutableMap<Integer, GroupDescription> groups;
     private final ObjectiveError error;
 
     private ObjectiveTranslation(ImmutableList<ImmutableSet<FlowRule>> flowRulesStages,
+                                 Map<Integer, GroupDescription> groups,
                                  ObjectiveError error) {
         this.flowRulesStages = flowRulesStages;
+        this.groups = ImmutableMap.copyOf(groups);
         this.error = error;
     }
 
@@ -54,6 +60,15 @@ final class ObjectiveTranslation {
      */
     ImmutableList<ImmutableSet<FlowRule>> stages() {
         return flowRulesStages;
+    }
+
+    /**
+     * Returns groups of this translation.
+     *
+     * @return groups
+     */
+    Collection<GroupDescription> groups() {
+        return groups.values();
     }
 
 
@@ -83,7 +98,7 @@ final class ObjectiveTranslation {
      */
     static ObjectiveTranslation ofError(ObjectiveError error) {
         checkNotNull(error);
-        return new ObjectiveTranslation(ImmutableList.of(),  error);
+        return new ObjectiveTranslation(ImmutableList.of(), Collections.emptyMap(), error);
     }
 
     @Override
@@ -135,6 +150,7 @@ final class ObjectiveTranslation {
 
         private final ImmutableList.Builder<ImmutableSet<FlowRule>> flowRulesBuilder = ImmutableList.builder();
         private Map<FlowId, FlowRule> currentStage = Maps.newHashMap();
+        private final Map<Integer, GroupDescription> groups = Maps.newHashMap();
 
         // Hide default constructor
         private Builder() {
@@ -161,6 +177,30 @@ final class ObjectiveTranslation {
                 }
             }
             currentStage.put(flowRule.id(), flowRule);
+            return this;
+        }
+
+        /**
+         * Adds group to this translation.
+         *
+         * @param group group
+         * @return this
+         * @throws SaiPipelinerException if a FlowRule with same GroupId already
+         *                               exists in this translation
+         */
+        Builder addGroup(GroupDescription group)
+                throws SaiPipelinerException {
+            checkNotNull(group);
+            if (groups.containsKey(group.givenGroupId())) {
+                final GroupDescription existingGroup = groups.get(group.givenGroupId());
+                if (!existingGroup.equals(group)) {
+                    throw new SaiPipelinerException(format(
+                            "Another Group with same ID has already been " +
+                                    "added to this translation: existing=%s, new=%s",
+                            existingGroup, group));
+                }
+            }
+            groups.put(group.givenGroupId(), group);
             return this;
         }
 
@@ -191,7 +231,7 @@ final class ObjectiveTranslation {
          */
         ObjectiveTranslation build() {
             closeStage();
-            return new ObjectiveTranslation(flowRulesBuilder.build(), null);
+            return new ObjectiveTranslation(flowRulesBuilder.build(), groups, null);
         }
     }
 }

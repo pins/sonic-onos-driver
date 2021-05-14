@@ -21,6 +21,7 @@ import org.onosproject.net.flow.criteria.Criterion;
 import org.onosproject.net.flow.criteria.IPCriterion;
 import org.onosproject.net.flow.criteria.PiCriterion;
 import org.onosproject.net.flowobjective.ForwardingObjective;
+import org.onosproject.net.flowobjective.Objective;
 import org.onosproject.net.flowobjective.ObjectiveError;
 import org.onosproject.net.group.DefaultGroupDescription;
 import org.onosproject.net.group.DefaultGroupKey;
@@ -52,6 +53,8 @@ import static org.onosproject.pipelines.sai.SaiPipelineUtils.criterionNotNull;
  */
 public class ForwardingObjectiveTranslator
         extends AbstractObjectiveTranslator<ForwardingObjective> {
+
+    static final int CLONE_TO_CPU_ID = 511;
 
     private static final String DEFAULT_VRF_ID = "vrf-0";
 
@@ -225,7 +228,7 @@ public class ForwardingObjectiveTranslator
         aclRule(obj, resultBuilder);
     }
 
-    void aclRule(ForwardingObjective obj, ObjectiveTranslation.Builder resultBuilder)
+    private void aclRule(ForwardingObjective obj, ObjectiveTranslation.Builder resultBuilder)
             throws SaiPipelinerException {
         // TODO: I should always push PiCriterion instead of relying on SaiInterpreter
         //  mapCriterionType method called from the PiFlowRuleInterpreter.
@@ -237,6 +240,18 @@ public class ForwardingObjectiveTranslator
                     && outPort.equals(PortNumber.CONTROLLER)
                     && obj.treatment().allInstructions().size() == 1) {
                 final PiAction aclAction;
+                // CLONE and TRAP both require the CloneGroup, this is required only
+                // when using BMv2. If using SONiC/PINS, the CloneGroup is not needed.
+                // The group will fail when when trying to translate on
+                // PiReplicationGroupTranslatorImpl.
+                if (obj.op() == Objective.Operation.ADD) {
+                    // Action is ADD, create clone group
+                    final DefaultGroupDescription cloneGroup =
+                            createCloneGroup(obj.appId(),
+                                             CLONE_TO_CPU_ID,
+                                             outPort);
+                    resultBuilder.addGroup(cloneGroup);
+                }
                 if (treatment.clearedDeferred()) {
                     // Action is PUNT packet to the CPU
                     aclAction = PiAction.builder()
@@ -244,7 +259,6 @@ public class ForwardingObjectiveTranslator
                             .withParameter(new PiActionParam(SaiConstants.QOS_QUEUE, "0x1"))
                             .build();
                 } else {
-                    // Action is clone packet to the CPU
                     aclAction = PiAction.builder()
                             .withId(SaiConstants.INGRESS_ACL_INGRESS_COPY)
                             .withParameter(new PiActionParam(SaiConstants.QOS_QUEUE, "0x1"))

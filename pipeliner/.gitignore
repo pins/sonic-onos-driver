@@ -1,3 +1,0 @@
-src/main/resources/*
-!src/main/resources/p4info.txt
-!src/main/resources/p4info_fixed.txt

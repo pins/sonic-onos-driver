@@ -67,10 +67,12 @@ public class FilteringObjectiveTranslator
             inPortNumber = actualPort.number();
         }
 
-
-        final PiCriterion inPortCriterion = PiCriterion.builder()
-                .matchOptional(SaiConstants.HDR_IN_PORT,
-                               inPortNumber.name()).build();
+        final PiCriterion.Builder inPortCriterionBuilder = PiCriterion.builder();
+        if (capabilities.isMatchFieldString(SaiConstants.INGRESS_L3_ADMIT_L3_ADMIT_TABLE, SaiConstants.HDR_IN_PORT)) {
+            inPortCriterionBuilder.matchOptional(SaiConstants.HDR_IN_PORT, inPortNumber.name());
+        } else {
+            inPortCriterionBuilder.matchOptional(SaiConstants.HDR_IN_PORT, inPortNumber.toLong());
+        }
         final EthCriterion ethDst = (EthCriterion) criterion(
                 obj.conditions(), Criterion.Type.ETH_DST);
         final TrafficSelector.Builder selectorBuilder = DefaultTrafficSelector.builder();
@@ -78,7 +80,7 @@ public class FilteringObjectiveTranslator
             selectorBuilder
                     .matchEthDstMasked(ethDst.mac(), ethDst.mask() == null ?
                             MacAddress.EXACT_MASK : ethDst.mask())
-                    .matchPi(inPortCriterion);
+                    .matchPi(inPortCriterionBuilder.build());
         }
         final PiAction action = PiAction.builder()
                 .withId(SaiConstants.INGRESS_L3_ADMIT_ADMIT_TO_L3)

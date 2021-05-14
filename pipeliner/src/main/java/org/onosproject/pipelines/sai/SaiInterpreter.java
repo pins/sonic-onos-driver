@@ -37,6 +37,7 @@ import java.util.Optional;
 import static java.lang.String.format;
 import static java.util.stream.Collectors.toList;
 import static org.onlab.util.ImmutableByteSequence.copyFrom;
+import static org.onosproject.net.PortNumber.CONTROLLER;
 import static org.onosproject.net.PortNumber.FLOOD;
 import static org.onosproject.net.flow.instructions.Instruction.Type.OUTPUT;
 import static org.onosproject.net.pi.model.PiPacketOperationType.PACKET_OUT;
@@ -168,25 +169,30 @@ public class SaiInterpreter extends AbstractSaiHandlerBehavior
 
         if (packetMetadata.isPresent()) {
             ImmutableByteSequence portByteSequence = packetMetadata.get().value();
-            String portString = portByteSequence.toString();
-            // From switch we are getting the String representation of the port,
-            // we need to query DeviceService and find the corresponding port.
-            final DeviceService deviceService = handler().get(DeviceService.class);
-            final List<Port> portList = deviceService.getPorts(deviceId).stream()
-                    .filter(port -> port.number().name().equals(portString))
-                    .collect(toList());
-            if (portList.isEmpty()) {
-                throw new PiInterpreterException(format(
-                        "No port found for packet-in received from '%s': %s",
-                        deviceId, packetIn));
+            ConnectPoint receivedFrom;
+            if (capabilities.isPktInMetadataString(INGRESS_PORT)) {
+                String portString = portByteSequence.toString();
+                // From switch we are getting the String representation of the port,
+                // we need to query DeviceService and find the corresponding port.
+                final DeviceService deviceService = handler().get(DeviceService.class);
+                final List<Port> portList = deviceService.getPorts(deviceId).stream()
+                        .filter(port -> port.number().name().equals(portString))
+                        .collect(toList());
+                if (portList.isEmpty()) {
+                    throw new PiInterpreterException(format(
+                            "No port found for packet-in received from '%s': %s",
+                            deviceId, packetIn));
+                }
+                if (portList.size() > 1) {
+                    throw new PiInterpreterException(format(
+                            "%d ports found for packet-in received from '%s': %s",
+                            portList.size(), deviceId, packetIn));
+                }
+                receivedFrom = new ConnectPoint(deviceId, portList.get(0).number());
+            } else {
+                short s = portByteSequence.asReadOnlyBuffer().getShort();
+                receivedFrom = new ConnectPoint(deviceId, PortNumber.portNumber(s));
             }
-            if (portList.size() > 1) {
-                throw new PiInterpreterException(format(
-                        "%d ports found for packet-in received from '%s': %s",
-                        portList.size(), deviceId, packetIn));
-            }
-            final Port actualPort = portList.get(0);
-            ConnectPoint receivedFrom = new ConnectPoint(deviceId, actualPort.number());
             ByteBuffer rawData = ByteBuffer.wrap(packetIn.data().asArray());
             return new DefaultInboundPacket(receivedFrom, ethPkt, rawData);
         } else {
@@ -203,7 +209,7 @@ public class SaiInterpreter extends AbstractSaiHandlerBehavior
         if (actualPort != null) {
             portNumber = actualPort.number();
         }
-        List<PiPacketMetadata> metadata = createPacketMetadata(portNumber.name());
+        List<PiPacketMetadata> metadata = createPacketMetadata(portNumber);
         return PiPacketOperation.builder()
                 .withType(PACKET_OUT)
                 .withData(copyFrom(data))
@@ -211,13 +217,18 @@ public class SaiInterpreter extends AbstractSaiHandlerBehavior
                 .build();
     }
 
-    private List<PiPacketMetadata> createPacketMetadata(String portNumber) {
-        return ImmutableList.of(
+    private List<PiPacketMetadata> createPacketMetadata(PortNumber portNumber) {
+        final PiPacketMetadata.Builder piPacketMetadataBuilder =
                 PiPacketMetadata.builder()
-                        .withId(EGRESS_PORT)
-                        .withValue(copyFrom(portNumber))
-                        .build(),
-                // FIXME: should submit to ingress or directly output to port
+                .withId(EGRESS_PORT);
+        if (capabilities.isPktOutMetadataString(EGRESS_PORT)) {
+            piPacketMetadataBuilder.withValue(copyFrom(portNumber.name()));
+        } else {
+            piPacketMetadataBuilder.withValue(copyFrom(portNumber.toLong()));
+        }
+        return ImmutableList.of(
+                piPacketMetadataBuilder.build(),
+                // TODO: add support for submit to ingress
                 PiPacketMetadata.builder()
                         .withId(SUBMIT_TO_INGRESS)
                         .withValue(copyFrom(ZERO_BIT))
@@ -242,5 +253,13 @@ public class SaiInterpreter extends AbstractSaiHandlerBehavior
         // The only use case for Index ID->PiTableId is when using the single
         // table pipeliner. sai.p4 is never used with such pipeliner.
         return Optional.empty();
+    }
+
+    @Override
+    public Optional<Integer> mapLogicalPortNumber(PortNumber port) {
+        if (!port.equals(CONTROLLER)) {
+            return Optional.empty();
+        }
+        return capabilities.cpuPort();
     }
 }
