@@ -23,7 +23,9 @@ mvn_build_container_name := mvn-build-${curr_dir_sha}
 
 deps:
 	docker pull ${maven_img}
-	docker pull ${P4C_IMG}
+
+../onos-tools:
+	cd ../ && make onos-tools
 
 local_build:
 	$(info *** Building ONOS app...)
@@ -56,28 +58,16 @@ build-sai-p4:
 		/p4src/instantiations/google/middleblock.p4
 	@echo "*** google/middleblock.p4 compiled successfully. Files available in src/main/resources"
 
-graphs-sai-p4:
-	$(info *** Building sai-main.p4 graphs)
-	@mkdir -p ${P4C_OUT_DIR}/graphs
-	docker run --rm -w /p4src -v ${P4C_SRC_DIR}:/p4src \
-		-v ${P4C_OUT_DIR}:/p4c-out ${P4C_IMG} \
-		p4c-graphs ${BMV2_PP_FLAGS} ${OTHER_PP_FLAGS} \
-		--graphs-dir /p4c-out/graphs \
-		/p4src/instantiations/google/middleblock.p4
-	for f in ${P4C_OUT_DIR}/graphs/*.dot; do \
-		docker run --rm -w ${P4C_OUT_DIR} -v ${P4C_OUT_DIR}:${P4C_OUT_DIR} ${P4C_IMG} \
-			dot -Tpdf $${f} > $${f}.pdf; rm -f $${f}; \
-	done
-	@echo "*** google/middleblock.p4 graphs available in src/main/resources/graphs"
-
 # Run this target on P4Info updates. It creates the SaiConstants.java from the
 # file src/main/resources/sai_fixed.p4info.
-gen-constants:
+gen-constants: ../onos-tools
 	$(info *** Creating SaiConstants.java from src/main/resources/p4info.txt)
-	docker run --rm -v $(shell pwd)/..:/sonic-onos-driver \
-		-w /sonic-onos-driver --entrypoint ./utils/gen_p4_const.py \
-		opennetworking/p4mn:latest Sai ./pipeliner/src/main/resources/sai_fixed.p4info \
-		-o ./pipeliner/src/main/java/org/onosproject/pipelines/sai/SaiConstants.java \
+	docker run --rm -v $(shell pwd):/pipeliner \
+		-v $(shell pwd)/../onos-tools/:/onos-tools \
+		-w /pipeliner --entrypoint python  \
+		opennetworking/p4mn:latest /onos-tools/onos-gen-p4-constants Sai \
+		/pipeliner/src/main/resources/pins/sai_onf.p4info \
+		-o /pipeliner/src/main/java/org/onosproject/pipelines/sai/SaiConstants.java \
 		--with-package-path org.onosproject.pipelines.sai
 
 clean:

@@ -43,9 +43,11 @@ clean: clean_driver clean_pipeliner
 
 onos-tools:
 	curl -sS https://repo1.maven.org/maven2/org/onosproject/onos-releases/2.5.0/onos-admin-2.5.0.tar.gz --output onos-admin-2.5.0.tar.gz
+	curl -sS https://raw.githubusercontent.com/opennetworkinglab/onos/master/tools/dev/bin/onos-gen-p4-constants --output onos-gen-p4-constants
 	tar xf onos-admin-2.5.0.tar.gz
 	rm onos-admin-2.5.0.tar.gz
 	mv onos-admin-2.5.0 onos-tools
+	mv onos-gen-p4-constants onos-tools/
 
 push_driver: driver/target/sonic-${DRIVER_VERSION}.oar onos-tools
 	onos-tools/onos-app ${ONOS_IP} reinstall! driver/target/sonic-${DRIVER_VERSION}.oar

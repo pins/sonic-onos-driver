@@ -19,7 +19,15 @@ jobs:
           submodules: true
 
       - name: Deps
-        run: cd pipeliner && make deps
+        run: |
+          cd pipeliner
+          make deps
+
+      - name: Check checked-in P4Info (run make gen-constants in pipeliner if this fails)
+        run: |
+          cd pipeliner
+          make gen-constants
+          git update-index --refresh
 
 #       DISABLED: P4Info and BMv2 json are checked-in
 #       TODO: build them with bazel and check with the checked in values.
