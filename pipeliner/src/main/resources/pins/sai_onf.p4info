@@ -18,7 +18,6 @@ tables {
   match_fields {
     id: 2
     name: "in_port"
-    bitwidth: 9
     match_type: OPTIONAL
     type_name {
       name: "port_id_t"
@@ -47,7 +46,6 @@ tables {
     id: 1
     name: "router_interface_id"
     annotations: "@refers_to(router_interface_table , router_interface_id)"
-    bitwidth: 192
     match_type: EXACT
     type_name {
       name: "router_interface_id_t"
@@ -56,7 +54,6 @@ tables {
   match_fields {
     id: 2
     name: "neighbor_id"
-    bitwidth: 192
     match_type: EXACT
     type_name {
       name: "neighbor_id_t"
@@ -84,7 +81,6 @@ tables {
   match_fields {
     id: 1
     name: "router_interface_id"
-    bitwidth: 192
     match_type: EXACT
     type_name {
       name: "router_interface_id_t"
@@ -112,7 +108,6 @@ tables {
   match_fields {
     id: 1
     name: "nexthop_id"
-    bitwidth: 192
     match_type: EXACT
     type_name {
       name: "nexthop_id_t"
@@ -141,7 +136,6 @@ tables {
   match_fields {
     id: 1
     name: "wcmp_group_id"
-    bitwidth: 192
     match_type: EXACT
     type_name {
       name: "wcmp_group_id_t"
@@ -170,7 +164,6 @@ tables {
   match_fields {
     id: 1
     name: "vrf_id"
-    bitwidth: 192
     match_type: EXACT
     type_name {
       name: "vrf_id_t"
@@ -208,7 +201,6 @@ tables {
   match_fields {
     id: 1
     name: "vrf_id"
-    bitwidth: 192
     match_type: EXACT
     type_name {
       name: "vrf_id_t"
@@ -359,7 +351,6 @@ tables {
     id: 16
     name: "in_port"
     annotations: "@sai_field(SAI_ACL_TABLE_ATTR_FIELD_IN_PORT)"
-    bitwidth: 9
     match_type: OPTIONAL
     type_name {
       name: "port_id_t"
@@ -389,7 +380,6 @@ tables {
   const_default_action_id: 21257015
   direct_resource_ids: 318767362
   direct_resource_ids: 352321792
-  size: 1024
 }
 tables {
   preamble {
@@ -401,7 +391,6 @@ tables {
   match_fields {
     id: 1
     name: "mirror_session_id"
-    bitwidth: 192
     match_type: EXACT
     type_name {
       name: "mirror_session_id_t"
@@ -429,7 +418,6 @@ tables {
   match_fields {
     id: 1
     name: "mirror_port"
-    bitwidth: 9
     match_type: EXACT
     type_name {
       name: "port_id_t"
@@ -464,6 +452,40 @@ actions {
 }
 actions {
   preamble {
+    id: 17825802
+    name: "ingress.hashing.select_emcp_hash_algorithm"
+    alias: "select_emcp_hash_algorithm"
+    annotations: "@sai_hash_algorithm(SAI_HASH_ALGORITHM_CRC_32LO)"
+    annotations: "@sai_hash_seed(0)"
+    annotations: "@sai_hash_offset(0)"
+  }
+}
+actions {
+  preamble {
+    id: 16777227
+    name: "ingress.hashing.compute_ecmp_hash_ipv4"
+    alias: "compute_ecmp_hash_ipv4"
+    annotations: "@sai_ecmp_hash(SAI_SWITCH_ATTR_ECMP_HASH_IPV4)"
+    annotations: "@sai_native_hash_field(SAI_NATIVE_HASH_FIELD_SRC_IPV4)"
+    annotations: "@sai_native_hash_field(SAI_NATIVE_HASH_FIELD_DST_IPV4)"
+    annotations: "@sai_native_hash_field(SAI_NATIVE_HASH_FIELD_L4_SRC_PORT)"
+    annotations: "@sai_native_hash_field(SAI_NATIVE_HASH_FIELD_L4_DST_PORT)"
+  }
+}
+actions {
+  preamble {
+    id: 16777228
+    name: "ingress.hashing.compute_ecmp_hash_ipv6"
+    alias: "compute_ecmp_hash_ipv6"
+    annotations: "@sai_ecmp_hash(SAI_SWITCH_ATTR_ECMP_HASH_IPV6)"
+    annotations: "@sai_native_hash_field(SAI_NATIVE_HASH_FIELD_SRC_IPV6)"
+    annotations: "@sai_native_hash_field(SAI_NATIVE_HASH_FIELD_DST_IPV6)"
+    annotations: "@sai_native_hash_field(SAI_NATIVE_HASH_FIELD_L4_SRC_PORT)"
+    annotations: "@sai_native_hash_field(SAI_NATIVE_HASH_FIELD_L4_DST_PORT)"
+  }
+}
+actions {
+  preamble {
     id: 16777217
     name: "ingress.routing.set_dst_mac"
     alias: "set_dst_mac"
@@ -484,7 +506,6 @@ actions {
   params {
     id: 1
     name: "port"
-    bitwidth: 9
     type_name {
       name: "port_id_t"
     }
@@ -507,7 +528,6 @@ actions {
     name: "router_interface_id"
     annotations: "@refers_to(router_interface_table , router_interface_id)"
     annotations: "@refers_to(neighbor_table , router_interface_id)"
-    bitwidth: 192
     type_name {
       name: "router_interface_id_t"
     }
@@ -516,7 +536,6 @@ actions {
     id: 2
     name: "neighbor_id"
     annotations: "@refers_to(neighbor_table , neighbor_id)"
-    bitwidth: 192
     type_name {
       name: "neighbor_id_t"
     }
@@ -532,7 +551,6 @@ actions {
     id: 1
     name: "nexthop_id"
     annotations: "@refers_to(nexthop_table , nexthop_id)"
-    bitwidth: 192
     type_name {
       name: "nexthop_id_t"
     }
@@ -555,7 +573,6 @@ actions {
     id: 1
     name: "wcmp_group_id"
     annotations: "@refers_to(wcmp_group_table , wcmp_group_id)"
-    bitwidth: 192
     type_name {
       name: "wcmp_group_id_t"
     }
@@ -572,7 +589,6 @@ actions {
     id: 1
     name: "qos_queue"
     annotations: "@sai_action_param(QOS_QUEUE)"
-    bitwidth: 192
     type_name {
       name: "qos_queue_t"
     }
@@ -589,7 +605,6 @@ actions {
     id: 1
     name: "qos_queue"
     annotations: "@sai_action_param(QOS_QUEUE)"
-    bitwidth: 192
     type_name {
       name: "qos_queue_t"
     }
@@ -615,7 +630,6 @@ actions {
     name: "mirror_session_id"
     annotations: "@sai_action_param(SAI_ACL_ENTRY_ATTR_ACTION_MIRROR_INGRESS)"
     annotations: "@refers_to(mirror_session_table , mirror_session_id)"
-    bitwidth: 192
     type_name {
       name: "mirror_session_id_t"
     }
@@ -630,7 +644,6 @@ actions {
   params {
     id: 1
     name: "port"
-    bitwidth: 9
     type_name {
       name: "port_id_t"
     }
@@ -725,7 +738,6 @@ controller_packet_metadata {
   metadata {
     id: 1
     name: "ingress_port"
-    bitwidth: 9
     type_name {
       name: "port_id_t"
     }
@@ -733,7 +745,6 @@ controller_packet_metadata {
   metadata {
     id: 2
     name: "target_egress_port"
-    bitwidth: 9
     type_name {
       name: "port_id_t"
     }
@@ -749,7 +760,6 @@ controller_packet_metadata {
   metadata {
     id: 1
     name: "egress_port"
-    bitwidth: 9
     type_name {
       name: "port_id_t"
     }
@@ -769,11 +779,8 @@ type_info {
   new_types {
     key: "mirror_session_id_t"
     value {
-      original_type {
-        bitstring {
-          bit {
-            bitwidth: 192
-          }
+      translated_type {
+        sdn_string {
         }
       }
     }
@@ -781,11 +788,8 @@ type_info {
   new_types {
     key: "neighbor_id_t"
     value {
-      original_type {
-        bitstring {
-          bit {
-            bitwidth: 192
-          }
+      translated_type {
+        sdn_string {
         }
       }
     }
@@ -793,11 +797,8 @@ type_info {
   new_types {
     key: "nexthop_id_t"
     value {
-      original_type {
-        bitstring {
-          bit {
-            bitwidth: 192
-          }
+      translated_type {
+        sdn_string {
         }
       }
     }
@@ -805,11 +806,8 @@ type_info {
   new_types {
     key: "port_id_t"
     value {
-      original_type {
-        bitstring {
-          bit {
-            bitwidth: 9
-          }
+      translated_type {
+        sdn_string {
         }
       }
     }
@@ -817,11 +815,8 @@ type_info {
   new_types {
     key: "qos_queue_t"
     value {
-      original_type {
-        bitstring {
-          bit {
-            bitwidth: 192
-          }
+      translated_type {
+        sdn_string {
         }
       }
     }
@@ -829,11 +824,8 @@ type_info {
   new_types {
     key: "router_interface_id_t"
     value {
-      original_type {
-        bitstring {
-          bit {
-            bitwidth: 192
-          }
+      translated_type {
+        sdn_string {
         }
       }
     }
@@ -841,11 +833,8 @@ type_info {
   new_types {
     key: "vrf_id_t"
     value {
-      original_type {
-        bitstring {
-          bit {
-            bitwidth: 192
-          }
+      translated_type {
+        sdn_string {
         }
       }
     }
@@ -853,11 +842,8 @@ type_info {
   new_types {
     key: "wcmp_group_id_t"
     value {
-      original_type {
-        bitstring {
-          bit {
-            bitwidth: 192
-          }
+      translated_type {
+        sdn_string {
         }
       }
     }

@@ -50,11 +50,6 @@ public final class SaiPipeconfLoader {
             new PiPipeconfId("org.onosproject.pipelines.sai_fixed");
     private static final String FIXED_SAI_P4INFO = "/pins/sai_fixed.p4info";
 
-    private static final PiPipeconfId SAI_BMV2_PIPECONF_ID =
-            new PiPipeconfId("org.onosproject.pipelines.sai.bmv2");
-    private static final String SAI_BMV2_P4INFO = "/bmv2/sai_onf.bmv2.p4info";
-    private static final String SAI_BMV2_JSON = "/bmv2/sai_onf.bmv2.json";
-
     private static final PiPipeconfId SAI_GOOGLE_BMV2_PIPECONF_ID =
             new PiPipeconfId("org.onosproject.pipelines.sai.google.bmv2");
     private static final String SAI_GOOGLE_BMV2_P4INFO = "/bmv2/sai_google.bmv2.p4info";
@@ -66,7 +61,6 @@ public final class SaiPipeconfLoader {
     public static final Collection<PiPipeconf> PIPECONFS = ImmutableList.of(
             buildPipeconfPins(SAI_PIPECONF_ID, SAI_P4INFO),
             buildPipeconfPins(FIXED_SAI_PIPECONF_ID, FIXED_SAI_P4INFO),
-            buildPipeconfBmv2(SAI_BMV2_PIPECONF_ID, SAI_BMV2_P4INFO, SAI_BMV2_JSON),
             buildPipeconfBmv2(SAI_GOOGLE_BMV2_PIPECONF_ID, SAI_GOOGLE_BMV2_P4INFO,
                               SAI_GOOGLE_BMV2_JSON));
 

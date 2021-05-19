@@ -106,14 +106,20 @@ public final class SaiConstants {
     public static final PiCounterId INGRESS_ACL_INGRESS_ACL_INGRESS_COUNTER =
             PiCounterId.of("ingress.acl_ingress.acl_ingress_counter");
     // Action IDs
-    public static final PiActionId INGRESS_ROUTING_SET_NEXTHOP =
-            PiActionId.of("ingress.routing.set_nexthop");
+    public static final PiActionId INGRESS_HASHING_COMPUTE_ECMP_HASH_IPV6 =
+            PiActionId.of("ingress.hashing.compute_ecmp_hash_ipv6");
     public static final PiActionId INGRESS_MIRRORING_CLONE_SET_PRE_SESSION =
             PiActionId.of("ingress.mirroring_clone.set_pre_session");
+    public static final PiActionId INGRESS_HASHING_COMPUTE_ECMP_HASH_IPV4 =
+            PiActionId.of("ingress.hashing.compute_ecmp_hash_ipv4");
     public static final PiActionId INGRESS_ACL_INGRESS_COPY =
             PiActionId.of("ingress.acl_ingress.copy");
     public static final PiActionId INGRESS_ROUTING_DROP =
             PiActionId.of("ingress.routing.drop");
+    public static final PiActionId INGRESS_ROUTING_SET_NEXTHOP =
+            PiActionId.of("ingress.routing.set_nexthop");
+    public static final PiActionId INGRESS_HASHING_SELECT_EMCP_HASH_ALGORITHM =
+            PiActionId.of("ingress.hashing.select_emcp_hash_algorithm");
     public static final PiActionId INGRESS_L3_ADMIT_ADMIT_TO_L3 =
             PiActionId.of("ingress.l3_admit.admit_to_l3");
     public static final PiActionId INGRESS_ACL_INGRESS_MIRROR =
