@@ -57,6 +57,7 @@ public class ForwardingObjectiveTranslator
     static final int CLONE_TO_CPU_ID = 511;
 
     private static final String DEFAULT_VRF_ID = "vrf-0";
+    private static final int DEFAULT_VRF_ID_BMV2 = 0;
 
     // Supported ACL Criterion
     private static final Set<Criterion.Type> ACL_SUPPORTED_CRITERIA = ImmutableSet.of(
@@ -180,14 +181,17 @@ public class ForwardingObjectiveTranslator
         // because CRITERION_MAP in SaiInterpreter has different translation for IPV4/6_DST criterion
         // TODO (daniele): should we set the vrf_id in the acl_lookup_table table?
         //  is the default VRF supposed to be default value?
+        final PiCriterion.Builder criterionBuilder = PiCriterion.builder();
+        if (capabilities.isMatchFieldString(ipRoutingTableId, SaiConstants.HDR_VRF_ID)) {
+            criterionBuilder.matchExact(SaiConstants.HDR_VRF_ID, DEFAULT_VRF_ID);
+        } else {
+            criterionBuilder.matchExact(SaiConstants.HDR_VRF_ID, DEFAULT_VRF_ID_BMV2);
+        }
+        criterionBuilder.matchLpm(IP_CRITERION_MAP.get(ipDstCriterion.type()),
+                                  ipDstCriterion.ip().address().toOctets(),
+                                  ipDstCriterion.ip().prefixLength());
         final TrafficSelector selector = DefaultTrafficSelector.builder()
-                .matchPi(PiCriterion.builder()
-                                 .matchExact(SaiConstants.HDR_VRF_ID,
-                                             DEFAULT_VRF_ID)
-                                 .matchLpm(IP_CRITERION_MAP.get(ipDstCriterion.type()),
-                                           ipDstCriterion.ip().address().toOctets(),
-                                           ipDstCriterion.ip().prefixLength())
-                                 .build())
+                .matchPi(criterionBuilder.build())
                 .build();
         final PiActionParam nextIdParam = new PiActionParam(SaiConstants.WCMP_GROUP_ID,
                                                             String.valueOf(obj.nextId()));
