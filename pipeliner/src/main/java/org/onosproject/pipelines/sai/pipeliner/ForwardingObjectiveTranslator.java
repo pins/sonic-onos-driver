@@ -250,11 +250,13 @@ public class ForwardingObjectiveTranslator
                 // PiReplicationGroupTranslatorImpl.
                 if (obj.op() == Objective.Operation.ADD) {
                     // Action is ADD, create clone group
-                    final DefaultGroupDescription cloneGroup =
-                            createCloneGroup(obj.appId(),
-                                             CLONE_TO_CPU_ID,
-                                             outPort);
-                    resultBuilder.addGroup(cloneGroup);
+                    if (capabilities.isBmv2()) {
+                        final DefaultGroupDescription cloneGroup =
+                                createCloneGroup(obj.appId(),
+                                                 CLONE_TO_CPU_ID,
+                                                 outPort);
+                        resultBuilder.addGroup(cloneGroup);
+                    }
                 }
                 if (treatment.clearedDeferred()) {
                     // Action is PUNT packet to the CPU

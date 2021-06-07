@@ -21,6 +21,7 @@ import java.io.InputStreamReader;
 import java.util.Optional;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static org.onosproject.net.pi.model.PiPipeconf.ExtensionType.BMV2_JSON;
 import static org.onosproject.net.pi.model.PiPipeconf.ExtensionType.CPU_PORT_TXT;
 import static org.slf4j.LoggerFactory.getLogger;
 
@@ -129,5 +130,10 @@ public class SaiCapabilities {
                       pipeconf.id(), e.getMessage());
             return Optional.empty();
         }
+    }
+
+    public boolean isBmv2() {
+        // We might probably want to add pipeconf annotation and exploit them.
+        return pipeconf.extension(BMV2_JSON).isPresent();
     }
 }

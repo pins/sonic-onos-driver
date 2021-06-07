@@ -45,7 +45,6 @@ import static org.onlab.packet.IPv6.getLinkLocalAddress;
 import static org.onosproject.pipelines.sai.SaiPipelineUtils.ethDst;
 import static org.onosproject.pipelines.sai.SaiPipelineUtils.ethSrc;
 import static org.onosproject.pipelines.sai.SaiPipelineUtils.isL3NextObj;
-import static org.onosproject.pipelines.sai.SaiPipelineUtils.isMplsObj;
 import static org.onosproject.pipelines.sai.SaiPipelineUtils.outputPort;
 import static org.onosproject.pipelines.sai.pipeliner.SaiPipeliner.KRYO;
 
@@ -105,10 +104,12 @@ public class NextObjectiveTranslator
     private void hashedNext(NextObjective obj,
                             ObjectiveTranslation.Builder resultBuilder)
             throws SaiPipelinerException {
-        if (isMplsObj(obj)) {
-            log.warn("Unsupported NextObjective type '{}', ignore it", obj);
-            return;
-        }
+        // FIXME: this hack is needed to work with Trellis.
+        //  We exploit the MPLS next obj as the next obj to program WCMP.
+//        if (isMplsObj(obj)) {
+//            log.warn("Unsupported NextObjective type '{}', ignore it", obj);
+//            return;
+//        }
 
         final var builderActProfActSet = PiActionProfileActionSet.builder();
         final List<DefaultNextTreatment> defaultNextTreatments = defaultNextTreatments(obj.nextTreatments(), true);

@@ -228,7 +228,7 @@ public class SaiInterpreter extends AbstractSaiHandlerBehavior
         }
         return ImmutableList.of(
                 piPacketMetadataBuilder.build(),
-                // TODO: add support for submit to ingress
+                // TODO: add support for submit to ingress e.g. using TABLE port
                 PiPacketMetadata.builder()
                         .withId(SUBMIT_TO_INGRESS)
                         .withValue(copyFrom(ZERO_BIT))
