@@ -3,10 +3,14 @@ name: "build"
 on: 
   push:
     branches: [ main ]
+    paths:
+      - 'driver/**'
   pull_request:
+    paths:
+      - 'driver/**'
 
 jobs:
-  build:
+  build-driver:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -15,4 +19,4 @@ jobs:
         with:
           java-version: 11
       - name: Build SONiC ONOS Drivers
-        run: make local_build
+        run: make local_build_driver

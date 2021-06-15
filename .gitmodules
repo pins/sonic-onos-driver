@@ -1,0 +1,3 @@
+[submodule "pipeliner/pins-infra"]
+	path = pipeliner/pins-infra
+	url = git@github.com:pins/pins-infra.git
