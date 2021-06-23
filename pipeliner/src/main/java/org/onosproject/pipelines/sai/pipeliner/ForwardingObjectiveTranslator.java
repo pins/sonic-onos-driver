@@ -187,9 +187,12 @@ public class ForwardingObjectiveTranslator
         } else {
             criterionBuilder.matchExact(SaiConstants.HDR_VRF_ID, DEFAULT_VRF_ID_BMV2);
         }
-        criterionBuilder.matchLpm(IP_CRITERION_MAP.get(ipDstCriterion.type()),
-                                  ipDstCriterion.ip().address().toOctets(),
-                                  ipDstCriterion.ip().prefixLength());
+        // Default route doesn't need to have the IP as part of the criterion
+        if (ipDstCriterion.ip().prefixLength() != 0) {
+            criterionBuilder.matchLpm(IP_CRITERION_MAP.get(ipDstCriterion.type()),
+                                      ipDstCriterion.ip().address().toOctets(),
+                                      ipDstCriterion.ip().prefixLength());
+        }
         final TrafficSelector selector = DefaultTrafficSelector.builder()
                 .matchPi(criterionBuilder.build())
                 .build();
@@ -208,6 +211,14 @@ public class ForwardingObjectiveTranslator
         final TrafficTreatment treatment = DefaultTrafficTreatment.builder()
                 .piTableAction(action)
                 .build();
+
+        // Default route must be managed differently
+        if (ipDstCriterion.ip().prefixLength() == 0) {
+            ForwardingObjective defaultObj = obj.copy()
+                    .withPriority(0)
+                    .add();
+            return flowRule(defaultObj, ipRoutingTableId, selector, treatment);
+        }
 
         return flowRule(obj, ipRoutingTableId, selector, treatment);
     }
