@@ -30,7 +30,7 @@ import org.onosproject.net.flowobjective.Objective;
 import org.onosproject.net.flowobjective.ObjectiveError;
 import org.onosproject.net.pi.runtime.PiAction;
 import org.onosproject.net.pi.runtime.PiActionParam;
-import org.onosproject.net.pi.runtime.PiActionProfileActionSet;
+import org.onosproject.net.pi.runtime.PiActionSet;
 import org.onosproject.pipelines.sai.SaiCapabilities;
 import org.onosproject.pipelines.sai.SaiConstants;
 
@@ -111,7 +111,7 @@ public class NextObjectiveTranslator
 //            return;
 //        }
 
-        final var builderActProfActSet = PiActionProfileActionSet.builder();
+        final var builderActSet = PiActionSet.builder();
         final List<DefaultNextTreatment> defaultNextTreatments = defaultNextTreatments(obj.nextTreatments(), true);
         final List<FlowRule> routerInterfaceEntries = Lists.newArrayList();
         final List<FlowRule> neighborEntries = Lists.newArrayList();
@@ -179,11 +179,11 @@ public class NextObjectiveTranslator
             updateNextGroup(obj, oldNextTreatments);
         }
         // Create the WCMP group table entry.
-        wcmpBuckets.forEach(bucket -> builderActProfActSet
+        wcmpBuckets.forEach(bucket -> builderActSet
                 .addActionProfileAction(bucket.getLeft(), bucket.getRight()));
         final TrafficSelector selector = nextIdSelector(obj.id());
         final TrafficTreatment treatment = DefaultTrafficTreatment.builder()
-                .piTableAction(builderActProfActSet.build())
+                .piTableAction(builderActSet.build())
                 .build();
         final FlowRule wcmpFlowRule = flowRule(
                 obj, SaiConstants.INGRESS_ROUTING_WCMP_GROUP_TABLE,
