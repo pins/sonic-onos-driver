@@ -180,7 +180,7 @@ public class NextObjectiveTranslator
         }
         // Create the WCMP group table entry.
         wcmpBuckets.forEach(bucket -> builderActSet
-                .addActionProfileAction(bucket.getLeft(), bucket.getRight()));
+                .addWeightedAction(bucket.getLeft(), bucket.getRight()));
         final TrafficSelector selector = nextIdSelector(obj.id());
         final TrafficTreatment treatment = DefaultTrafficTreatment.builder()
                 .piTableAction(builderActSet.build())
