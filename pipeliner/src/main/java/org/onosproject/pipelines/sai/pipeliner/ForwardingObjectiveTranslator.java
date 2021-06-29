@@ -8,7 +8,9 @@ package org.onosproject.pipelines.sai.pipeliner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import org.onlab.packet.IpPrefix;
 import org.onosproject.core.ApplicationId;
 import org.onosproject.net.DeviceId;
 import org.onosproject.net.PortNumber;
@@ -37,6 +39,7 @@ import org.onosproject.pipelines.sai.SaiCapabilities;
 import org.onosproject.pipelines.sai.SaiConstants;
 import org.onosproject.pipelines.sai.SaiPipelineUtils;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -53,6 +56,9 @@ import static org.onosproject.pipelines.sai.SaiPipelineUtils.criterionNotNull;
  */
 public class ForwardingObjectiveTranslator
         extends AbstractObjectiveTranslator<ForwardingObjective> {
+
+    private static final List<String> DEFAULT_ROUTE_PREFIXES = Lists.newArrayList(
+            "0.0.0.0/1", "128.0.0.0/1");
 
     static final int CLONE_TO_CPU_ID = 511;
 
@@ -84,7 +90,7 @@ public class ForwardingObjectiveTranslator
             new ImmutableMap.Builder<Criterion.Type, PiMatchFieldId>()
                     .put(Criterion.Type.IPV4_DST, HDR_IPV4_DST)
                     .put(Criterion.Type.IPV6_DST, HDR_IPV6_DST)
-            .build();
+                    .build();
 
 
     ForwardingObjectiveTranslator(DeviceId deviceId, SaiCapabilities capabilities) {
@@ -131,7 +137,7 @@ public class ForwardingObjectiveTranslator
         switch (fft.type()) {
             case UNKNOWN:
                 throw new SaiPipelinerException("unable to detect forwarding function type");
-            // We currently support only IPv4 and IPv6 Routing
+                // We currently support only IPv4 and IPv6 Routing
             case IPV4_ROUTING:
                 ipv4RoutingRule(obj, criteriaWithMeta, resultBuilder);
                 break;
@@ -158,8 +164,8 @@ public class ForwardingObjectiveTranslator
         final IPCriterion ipDstCriterion = (IPCriterion) criterionNotNull(
                 criteriaWithMeta, Criterion.Type.IPV4_DST);
 
-        resultBuilder.addFlowRule(buildIpRoutingRule(obj, ipDstCriterion,
-                                                     SaiConstants.INGRESS_ROUTING_IPV4_TABLE));
+        resultBuilder.addFlowRules(buildIpRoutingRule(obj, ipDstCriterion,
+                                                      SaiConstants.INGRESS_ROUTING_IPV4_TABLE));
     }
 
     private void ipv6RoutingRule(ForwardingObjective obj, Set<Criterion> criteriaWithMeta,
@@ -169,33 +175,14 @@ public class ForwardingObjectiveTranslator
         final IPCriterion ipDstCriterion = (IPCriterion) criterionNotNull(
                 criteriaWithMeta, Criterion.Type.IPV6_DST);
 
-        resultBuilder.addFlowRule(buildIpRoutingRule(obj, ipDstCriterion,
-                                                     SaiConstants.INGRESS_ROUTING_IPV6_TABLE));
+        resultBuilder.addFlowRules(buildIpRoutingRule(obj, ipDstCriterion,
+                                                      SaiConstants.INGRESS_ROUTING_IPV6_TABLE));
     }
 
-    private FlowRule buildIpRoutingRule(ForwardingObjective obj,
-                                        IPCriterion ipDstCriterion,
-                                        PiTableId ipRoutingTableId)
+    private Collection<FlowRule> buildIpRoutingRule(ForwardingObjective obj,
+                                                    IPCriterion ipDstCriterion,
+                                                    PiTableId ipRoutingTableId)
             throws SaiPipelinerException {
-        // IpCriterion won't be translated correctly by PiFlowRuleTranslator
-        // because CRITERION_MAP in SaiInterpreter has different translation for IPV4/6_DST criterion
-        // TODO (daniele): should we set the vrf_id in the acl_lookup_table table?
-        //  is the default VRF supposed to be default value?
-        final PiCriterion.Builder criterionBuilder = PiCriterion.builder();
-        if (capabilities.isMatchFieldString(ipRoutingTableId, SaiConstants.HDR_VRF_ID)) {
-            criterionBuilder.matchExact(SaiConstants.HDR_VRF_ID, DEFAULT_VRF_ID);
-        } else {
-            criterionBuilder.matchExact(SaiConstants.HDR_VRF_ID, DEFAULT_VRF_ID_BMV2);
-        }
-        // Default route doesn't need to have the IP as part of the criterion
-        if (ipDstCriterion.ip().prefixLength() != 0) {
-            criterionBuilder.matchLpm(IP_CRITERION_MAP.get(ipDstCriterion.type()),
-                                      ipDstCriterion.ip().address().toOctets(),
-                                      ipDstCriterion.ip().prefixLength());
-        }
-        final TrafficSelector selector = DefaultTrafficSelector.builder()
-                .matchPi(criterionBuilder.build())
-                .build();
         final PiActionParam nextIdParam = new PiActionParam(SaiConstants.WCMP_GROUP_ID,
                                                             String.valueOf(obj.nextId()));
 
@@ -214,13 +201,42 @@ public class ForwardingObjectiveTranslator
 
         // Default route must be managed differently
         if (ipDstCriterion.ip().prefixLength() == 0) {
-            ForwardingObjective defaultObj = obj.copy()
-                    .withPriority(0)
-                    .add();
-            return flowRule(defaultObj, ipRoutingTableId, selector, treatment);
+            Collection<FlowRule> flowRules = Lists.newArrayList();
+            for (String prefix : DEFAULT_ROUTE_PREFIXES) {
+                final PiCriterion.Builder criterionBuilderDef = PiCriterion.builder();
+                if (capabilities.isMatchFieldString(ipRoutingTableId, SaiConstants.HDR_VRF_ID)) {
+                    criterionBuilderDef.matchExact(SaiConstants.HDR_VRF_ID, DEFAULT_VRF_ID);
+                } else {
+                    criterionBuilderDef.matchExact(SaiConstants.HDR_VRF_ID, DEFAULT_VRF_ID_BMV2);
+                }
+                criterionBuilderDef.matchLpm(IP_CRITERION_MAP.get(ipDstCriterion.type()),
+                                          IpPrefix.valueOf(prefix).address().toOctets(),
+                                          IpPrefix.valueOf(prefix).prefixLength());
+                final TrafficSelector defaultSelector = DefaultTrafficSelector.builder()
+                        .matchPi(criterionBuilderDef.build())
+                        .build();
+                flowRules.add(flowRule(obj, ipRoutingTableId, defaultSelector, treatment));
+            }
+            return flowRules;
         }
 
-        return flowRule(obj, ipRoutingTableId, selector, treatment);
+        // IpCriterion won't be translated correctly by PiFlowRuleTranslator
+        // because CRITERION_MAP in SaiInterpreter has different translation for IPV4/6_DST criterion
+        // TODO (daniele): should we set the vrf_id in the acl_lookup_table table?
+        //  is the default VRF supposed to be default value?
+        final PiCriterion.Builder criterionBuilder = PiCriterion.builder();
+        if (capabilities.isMatchFieldString(ipRoutingTableId, SaiConstants.HDR_VRF_ID)) {
+            criterionBuilder.matchExact(SaiConstants.HDR_VRF_ID, DEFAULT_VRF_ID);
+        } else {
+            criterionBuilder.matchExact(SaiConstants.HDR_VRF_ID, DEFAULT_VRF_ID_BMV2);
+        }
+        criterionBuilder.matchLpm(IP_CRITERION_MAP.get(ipDstCriterion.type()),
+                                  ipDstCriterion.ip().address().toOctets(),
+                                  ipDstCriterion.ip().prefixLength());
+        final TrafficSelector selector = DefaultTrafficSelector.builder()
+                .matchPi(criterionBuilder.build())
+                .build();
+        return List.of(flowRule(obj, ipRoutingTableId, selector, treatment));
     }
 
     private void processVersatileFwd(ForwardingObjective obj,
