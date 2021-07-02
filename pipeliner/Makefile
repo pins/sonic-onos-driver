@@ -61,7 +61,7 @@ build-sai-p4:
 # Run this target on P4Info updates. It creates the SaiConstants.java from the
 # file src/main/resources/sai_fixed.p4info.
 gen-constants: ../onos-tools
-	$(info *** Creating SaiConstants.java from src/main/resources/p4info.txt)
+	$(info *** Creating SaiConstants.java from src/main/resources/pins/sai_onf.p4info)
 	docker run --rm -v $(shell pwd):/pipeliner \
 		-v $(shell pwd)/../onos-tools/:/onos-tools \
 		-w /pipeliner --entrypoint python  \
