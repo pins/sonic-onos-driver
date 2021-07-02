@@ -34,11 +34,10 @@ jobs:
 #      - name: Build sai.p4 program with BMv2 P4C (in Docker)
 #        run: cd pipeliner && make build-sai-p4
 
-#       FIXME: currently we need latest maven artifacts that are not published yet.
-#      - name: Set up JDK 11
-#        uses: actions/setup-java@v1
-#        with:
-#          java-version: 11
-#
-#      - name: Build SAI ONOS Pipeliner
-#        run: cd pipeliner && make local_build
+      - name: Set up JDK 11
+        uses: actions/setup-java@v1
+        with:
+          java-version: 11
+
+      - name: Build SAI ONOS Pipeliner
+        run: make local_build_pipeliner
