@@ -273,8 +273,6 @@ public class ForwardingObjectiveTranslator
                 final PiAction aclAction;
                 // CLONE and TRAP both require the CloneGroup, this is required only
                 // when using BMv2. If using SONiC/PINS, the CloneGroup is not needed.
-                // The group will fail when when trying to translate on
-                // PiReplicationGroupTranslatorImpl.
                 if (obj.op() == Objective.Operation.ADD) {
                     // Action is ADD, create clone group
                     if (capabilities.isBmv2()) {
@@ -285,18 +283,19 @@ public class ForwardingObjectiveTranslator
                         resultBuilder.addGroup(cloneGroup);
                     }
                 }
-                if (treatment.clearedDeferred()) {
-                    // Action is PUNT packet to the CPU
-                    aclAction = PiAction.builder()
-                            .withId(SaiConstants.INGRESS_ACL_INGRESS_TRAP)
-                            .withParameter(new PiActionParam(SaiConstants.QOS_QUEUE, "0x1"))
-                            .build();
-                } else {
-                    aclAction = PiAction.builder()
-                            .withId(SaiConstants.INGRESS_ACL_INGRESS_COPY)
-                            .withParameter(new PiActionParam(SaiConstants.QOS_QUEUE, "0x1"))
-                            .build();
-                }
+//                if (treatment.clearedDeferred()) {
+                // FIXME: for now interpret all as trap
+                // Action is PUNT packet to the CPU
+                aclAction = PiAction.builder()
+                        .withId(SaiConstants.INGRESS_ACL_INGRESS_TRAP)
+                        .withParameter(new PiActionParam(SaiConstants.QOS_QUEUE, "0x1"))
+                        .build();
+//                } else {
+//                    aclAction = PiAction.builder()
+//                            .withId(SaiConstants.INGRESS_ACL_INGRESS_COPY)
+//                            .withParameter(new PiActionParam(SaiConstants.QOS_QUEUE, "0x1"))
+//                            .build();
+//                }
                 final TrafficTreatment piTreatment = DefaultTrafficTreatment.builder()
                         .piTableAction(aclAction)
                         .build();
