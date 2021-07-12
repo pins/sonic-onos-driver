@@ -2,13 +2,16 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # From: https://github.com/opennetworkinglab/stratum-onos-demo/blob/master/app/Makefile
-curr_dir := $(shell pwd)
-maven_img := maven:3.6.3-jdk-11-slim
-curr_dir_sha := $(shell echo -n "$(curr_dir)" | shasum | cut -c1-7)
+CURR_DIR := $(shell pwd)
+MAVEN_IMG := maven:3.6.3-jdk-11-slim
+CURR_DIR_SHA := $(shell echo -n "$(CURR_DIR)" | shasum | cut -c1-7)
 
-mvn_build_container_name := mvn-build-${curr_dir_sha}
+mvn_build_container_name := mvn-build-${CURR_DIR_SHA}
 
 .PHONY: local_build build _create_mvn_container _mvn_package clean
+
+deps:
+	docker pull ${MAVEN_IMG}
 
 local_build:
 	mvn clean install
@@ -20,7 +23,7 @@ build: _create_mvn_container _mvn_package
 # Reuse the same container to persist mvn repo cache.
 _create_mvn_container:
 	@if ! docker container ls -a --format '{{.Names}}' | grep -q ${mvn_build_container_name} ; then \
-		docker create -v ${curr_dir}:/mvn-src -w /mvn-src  --user "$(id -u):$(id -g)" --name ${mvn_build_container_name} ${maven_img} mvn clean install; \
+		docker create -v ${CURR_DIR}:/mvn-src -w /mvn-src  --user "$(id -u):$(id -g)" --name ${mvn_build_container_name} ${MAVEN_IMG} mvn clean install; \
 	fi
 
 _mvn_package:

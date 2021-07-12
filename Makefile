@@ -16,6 +16,9 @@ mvn_build_container_name := mvn-build-${curr_dir_sha}
 
 .PHONY: clean build local_build clean_pipeliner clean_driver build_pipeliner build_driver local_build_driver local_build_pipeliner push_driver push_pipeliner
 
+deps:
+	docker pull
+
 local_build_driver driver/target/sonic-0.1.0-SNAPSHOT.oar:
 	cd ./driver && make local_build
 

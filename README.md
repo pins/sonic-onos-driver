@@ -1,6 +1,9 @@
 # sonic-onos-driver
 Driver and pipeliner for PINS/SONiC in ONOS
 
+## Pre-requisites:
+To build the ONOS SONiC/PINS driver and SAI pipeliner only `Docker` and `curl` are required as dependencies.
+
 ## Build driver
 Run `make build_driver`
 
