@@ -7,14 +7,6 @@ ONOS_PORT ?= 8181
 PIPELINER_VERSION := 0.1.0-SNAPSHOT
 DRIVER_VERSION := 0.1.0-SNAPSHOT
 
-# From: https://github.com/opennetworkinglab/stratum-onos-demo/blob/master/app/Makefile
-curr_dir := $(shell pwd)
-maven_img := maven:3.6.3-jdk-11-slim
-curr_dir_sha := $(shell echo -n "$(curr_dir)" | shasum | cut -c1-7)
-
-mvn_build_container_name := mvn-build-${curr_dir_sha}
-
-.PHONY: clean build local_build clean_pipeliner clean_driver build_pipeliner build_driver local_build_driver local_build_pipeliner push_driver push_pipeliner
 
 deps: onos-tools
 	cd driver && make deps

@@ -16,7 +16,6 @@ CUR_DIR_SHA := $(shell echo -n "$(CUR_DIR)" | shasum | cut -c1-7)
 
 mvn_build_container_name := mvn-build-${CUR_DIR_SHA}
 
-.PHONY: deps local_build build _create_mvn_container _mvn_package build-sai-p4
 
 deps: ../onos-tools
 	docker pull ${MAVEN_IMG}
@@ -39,7 +38,7 @@ _create_mvn_container:
 	fi
 
 _mvn_package:
-	$(info *** Building ONOS app...)
+	$(info *** Building SAI PIPELINER app...)
 	@mkdir -p target
 	@docker start -a -i ${mvn_build_container_name}
 
