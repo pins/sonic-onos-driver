@@ -5,9 +5,11 @@
   -->
 <drivers>
     <driver name="sonic" manufacturer="Open Networking Foundation"
-            hwVersion="master" swVersion="Sonic" extends="p4runtime">
+            hwVersion="master" swVersion="Sonic" extends="p4runtime,gnmi">
         <behaviour api="org.onosproject.net.behaviour.PiPipelineProgrammable"
                    impl="org.onosproject.drivers.sonic.SonicPipelineProgrammable"/>
+        <behaviour api="org.onosproject.net.device.DeviceHandshaker"
+                   impl="org.onosproject.drivers.sonic.SonicHandshaker"/>
         <property name="supportTableCounters">false</property>
         <property name="tableReadCountersWithTableEntries">false</property>
         <property name="tableWildcardReads">true</property>
