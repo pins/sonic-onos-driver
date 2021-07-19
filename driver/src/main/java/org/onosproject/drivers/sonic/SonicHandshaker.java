@@ -1,7 +1,6 @@
 package org.onosproject.drivers.sonic;
 
 import org.onosproject.drivers.gnmi.GnmiHandshaker;
-//import org.onosproject.drivers.gnoi.GnoiHandshaker;
 import org.onosproject.drivers.p4runtime.P4RuntimeHandshaker;
 import org.onosproject.net.MastershipRole;
 import org.onosproject.net.device.DeviceAgentListener;
@@ -41,36 +40,32 @@ public class SonicHandshaker
     public boolean isReachable() {
         // Reachability is mainly used for mastership contests and it's a
         // prerequisite for availability.
-        //return p4runtime.isReachable();
-        //return true;
-        return gnmi.isReachable();
+        return p4runtime.isReachable();
+        //return gnmi.isReachable();
     }
 
     @Override
     public CompletableFuture<Boolean> probeReachability() {
-        //return p4runtime.probeReachability();
-        //return true;
-        //return gnmi.probeReachability();
-        CompletableFuture<Boolean> completableFuture = new CompletableFuture<>();
-        completableFuture.complete(true);
-        return completableFuture;
+        return p4runtime.probeReachability();
+        //CompletableFuture<Boolean> completableFuture = new CompletableFuture<>();
+        //completableFuture.complete(true);
+        //return completableFuture;
     }
 
     @Override
     public boolean isAvailable() {
         // Availability concerns packet forwarding, hence we consider only
         // P4Runtime.
-        //return p4runtime.isAvailable();
-        return gnmi.isReachable();
+        return p4runtime.isAvailable();
+        //return gnmi.isReachable();
     }
 
     @Override
     public CompletableFuture<Boolean> probeAvailability() {
-        //return p4runtime.probeAvailability();
-        //return gnmi.probeReachability();
-        CompletableFuture<Boolean> completableFuture = new CompletableFuture<>();
-        completableFuture.complete(true);
-        return completableFuture;
+        return p4runtime.probeAvailability();
+        //CompletableFuture<Boolean> completableFuture = new CompletableFuture<>();
+        //completableFuture.complete(true);
+        //return completableFuture;
     }
 
     @Override
