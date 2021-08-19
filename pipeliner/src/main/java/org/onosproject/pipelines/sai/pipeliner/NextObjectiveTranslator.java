@@ -136,7 +136,7 @@ public class NextObjectiveTranslator
             nextHopEntries.add(buildNextHopEntry(routerInterfaceId, neighborId, nextHopId, obj));
 
             // TODO (daniele): modify weight when WCMP is supported
-            wcmpBuckets.add(Pair.of(buildWcmpTableNextHopAction(nextHopId), 1));
+            wcmpBuckets.add(Pair.of(buildWcmpTableNextHopAction(nextHopId), t.weight()));
         }
 
         if (isGroupModifyOp(obj)) {
