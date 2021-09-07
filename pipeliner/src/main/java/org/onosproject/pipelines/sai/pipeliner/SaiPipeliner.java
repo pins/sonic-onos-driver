@@ -9,6 +9,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import org.onlab.util.KryoNamespace;
 import org.onlab.util.SharedExecutors;
+import org.onosproject.core.ApplicationId;
 import org.onosproject.net.DeviceId;
 import org.onosproject.net.PortNumber;
 import org.onosproject.net.behaviour.NextGroup;
@@ -116,6 +117,12 @@ public class SaiPipeliner extends AbstractSaiHandlerBehavior implements Pipeline
         }
         final ObjectiveTranslation result = nextTranslator.translate(obj);
         handleResult(obj, result);
+    }
+
+    @Override
+    public void purgeAll(ApplicationId appId) {
+        // We just push flow rule in SAI Pipeliner
+        flowRuleService.purgeFlowRules(deviceId, appId);
     }
 
     @Override
