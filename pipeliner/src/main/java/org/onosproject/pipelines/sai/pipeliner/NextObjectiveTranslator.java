@@ -159,7 +159,7 @@ public class NextObjectiveTranslator
                 // TODO (daniele): Something more meaningful than concat for nextHopId
                 final String nextHopId = neighborId + "@" + routerInterfaceId;
                 // TODO (daniele): modify weight when WCMP is supported
-                oldWcmpBuckets.add(Pair.of(buildWcmpTableNextHopAction(nextHopId), 1));
+                oldWcmpBuckets.add(Pair.of(buildWcmpTableNextHopAction(nextHopId), t.weight()));
             }
             switch (obj.op()) {
                 case ADD_TO_EXISTING:

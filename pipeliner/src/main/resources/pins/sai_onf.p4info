@@ -152,7 +152,7 @@ tables {
   }
   const_default_action_id: 21257015
   implementation_id: 299650760
-  size: 4096
+  size: 3968
 }
 tables {
   preamble {
@@ -189,7 +189,7 @@ tables {
     annotations: "@proto_id(3)"
   }
   const_default_action_id: 16777222
-  size: 1024
+  size: 32768
 }
 tables {
   preamble {
@@ -226,7 +226,7 @@ tables {
     annotations: "@proto_id(3)"
   }
   const_default_action_id: 16777222
-  size: 1024
+  size: 4096
 }
 tables {
   preamble {
@@ -306,37 +306,37 @@ tables {
   }
   match_fields {
     id: 10
+    name: "ttl"
+    annotations: "@sai_field(SAI_ACL_TABLE_ATTR_FIELD_TTL)"
+    bitwidth: 8
+    match_type: TERNARY
+  }
+  match_fields {
+    id: 11
+    name: "dscp"
+    annotations: "@sai_field(SAI_ACL_TABLE_ATTR_FIELD_DSCP)"
+    bitwidth: 6
+    match_type: TERNARY
+  }
+  match_fields {
+    id: 12
+    name: "ecn"
+    annotations: "@sai_field(SAI_ACL_TABLE_ATTR_FIELD_ECN)"
+    bitwidth: 2
+    match_type: TERNARY
+  }
+  match_fields {
+    id: 13
     name: "ip_protocol"
     annotations: "@sai_field(SAI_ACL_TABLE_ATTR_FIELD_IP_PROTOCOL)"
     bitwidth: 8
     match_type: TERNARY
   }
   match_fields {
-    id: 11
+    id: 14
     name: "icmpv6_type"
     annotations: "@sai_field(SAI_ACL_TABLE_ATTR_FIELD_ICMPV6_TYPE)"
     bitwidth: 8
-    match_type: TERNARY
-  }
-  match_fields {
-    id: 12
-    name: "icmp_type"
-    annotations: "@sai_field(SAI_ACL_TABLE_ATTR_FIELD_ICMP_TYPE)"
-    bitwidth: 8
-    match_type: TERNARY
-  }
-  match_fields {
-    id: 13
-    name: "icmp_code"
-    annotations: "@sai_field(SAI_ACL_TABLE_ATTR_FIELD_ICMP_CODE)"
-    bitwidth: 8
-    match_type: TERNARY
-  }
-  match_fields {
-    id: 14
-    name: "l4_src_port"
-    annotations: "@sai_field(SAI_ACL_TABLE_ATTR_FIELD_L4_SRC_PORT)"
-    bitwidth: 16
     match_type: TERNARY
   }
   match_fields {
@@ -345,15 +345,6 @@ tables {
     annotations: "@sai_field(SAI_ACL_TABLE_ATTR_FIELD_L4_DST_PORT)"
     bitwidth: 16
     match_type: TERNARY
-  }
-  match_fields {
-    id: 16
-    name: "in_port"
-    annotations: "@sai_field(SAI_ACL_TABLE_ATTR_FIELD_IN_PORT)"
-    match_type: OPTIONAL
-    type_name {
-      name: "port_id_t"
-    }
   }
   action_refs {
     id: 16777473
@@ -370,6 +361,10 @@ tables {
   action_refs {
     id: 16777476
     annotations: "@proto_id(4)"
+  }
+  action_refs {
+    id: 16777481
+    annotations: "@proto_id(5)"
   }
   action_refs {
     id: 21257015
@@ -444,6 +439,14 @@ actions {
 }
 actions {
   preamble {
+    id: 16777481
+    name: "acl_drop"
+    alias: "acl_drop"
+    annotations: "@sai_action(SAI_PACKET_ACTION_DROP)"
+  }
+}
+actions {
+  preamble {
     id: 16777224
     name: "ingress.l3_admit.admit_to_l3"
     alias: "admit_to_l3"
@@ -452,10 +455,11 @@ actions {
 actions {
   preamble {
     id: 17825802
-    name: "ingress.hashing.select_emcp_hash_algorithm"
-    alias: "select_emcp_hash_algorithm"
+    name: "ingress.hashing.select_ecmp_hash_algorithm"
+    alias: "select_ecmp_hash_algorithm"
     annotations: "@sai_hash_algorithm(SAI_HASH_ALGORITHM_CRC_32LO)"
     annotations: "@sai_hash_seed(0)"
+    annotations: "@sai_hash_offset(0)"
   }
 }
 actions {
@@ -702,7 +706,7 @@ action_profiles {
   table_ids: 33554499
   with_selector: true
   size: 65536
-  max_group_size: 1024
+  max_group_size: 256
 }
 direct_counters {
   preamble {
