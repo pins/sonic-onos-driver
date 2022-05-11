@@ -46,10 +46,9 @@ public final class SaiConstants {
             PiMatchFieldId.of("icmpv6_type");
     public static final PiMatchFieldId HDR_WCMP_GROUP_ID =
             PiMatchFieldId.of("wcmp_group_id");
+    public static final PiMatchFieldId HDR_TTL = PiMatchFieldId.of("ttl");
     public static final PiMatchFieldId HDR_MIRROR_SESSION_ID =
             PiMatchFieldId.of("mirror_session_id");
-    public static final PiMatchFieldId HDR_ICMP_TYPE =
-            PiMatchFieldId.of("icmp_type");
     public static final PiMatchFieldId HDR_DST_IPV6 =
             PiMatchFieldId.of("dst_ipv6");
     public static final PiMatchFieldId HDR_IPV4_DST =
@@ -61,14 +60,12 @@ public final class SaiConstants {
             PiMatchFieldId.of("neighbor_id");
     public static final PiMatchFieldId HDR_IN_PORT =
             PiMatchFieldId.of("in_port");
-    public static final PiMatchFieldId HDR_ICMP_CODE =
-            PiMatchFieldId.of("icmp_code");
     public static final PiMatchFieldId HDR_DST_MAC =
             PiMatchFieldId.of("dst_mac");
     public static final PiMatchFieldId HDR_IP_PROTOCOL =
             PiMatchFieldId.of("ip_protocol");
-    public static final PiMatchFieldId HDR_L4_SRC_PORT =
-            PiMatchFieldId.of("l4_src_port");
+    public static final PiMatchFieldId HDR_ECN = PiMatchFieldId.of("ecn");
+    public static final PiMatchFieldId HDR_DSCP = PiMatchFieldId.of("dscp");
     public static final PiMatchFieldId HDR_VRF_ID = PiMatchFieldId.of("vrf_id");
     public static final PiMatchFieldId HDR_IS_IPV4 =
             PiMatchFieldId.of("is_ipv4");
@@ -106,6 +103,7 @@ public final class SaiConstants {
     public static final PiCounterId INGRESS_ACL_INGRESS_ACL_INGRESS_COUNTER =
             PiCounterId.of("ingress.acl_ingress.acl_ingress_counter");
     // Action IDs
+    public static final PiActionId ACL_DROP = PiActionId.of("acl_drop");
     public static final PiActionId INGRESS_HASHING_COMPUTE_ECMP_HASH_IPV6 =
             PiActionId.of("ingress.hashing.compute_ecmp_hash_ipv6");
     public static final PiActionId INGRESS_MIRRORING_CLONE_SET_PRE_SESSION =
@@ -118,19 +116,19 @@ public final class SaiConstants {
             PiActionId.of("ingress.routing.drop");
     public static final PiActionId INGRESS_ROUTING_SET_NEXTHOP =
             PiActionId.of("ingress.routing.set_nexthop");
-    public static final PiActionId INGRESS_HASHING_SELECT_EMCP_HASH_ALGORITHM =
-            PiActionId.of("ingress.hashing.select_emcp_hash_algorithm");
     public static final PiActionId INGRESS_L3_ADMIT_ADMIT_TO_L3 =
             PiActionId.of("ingress.l3_admit.admit_to_l3");
     public static final PiActionId INGRESS_ACL_INGRESS_MIRROR =
             PiActionId.of("ingress.acl_ingress.mirror");
     public static final PiActionId NO_ACTION = PiActionId.of("NoAction");
-    public static final PiActionId INGRESS_ROUTING_SET_NEXTHOP_ID =
-            PiActionId.of("ingress.routing.set_nexthop_id");
-    public static final PiActionId INGRESS_ACL_INGRESS_FORWARD =
-            PiActionId.of("ingress.acl_ingress.forward");
     public static final PiActionId INGRESS_ROUTING_SET_WCMP_GROUP_ID =
             PiActionId.of("ingress.routing.set_wcmp_group_id");
+    public static final PiActionId INGRESS_HASHING_SELECT_ECMP_HASH_ALGORITHM =
+            PiActionId.of("ingress.hashing.select_ecmp_hash_algorithm");
+    public static final PiActionId INGRESS_ACL_INGRESS_FORWARD =
+            PiActionId.of("ingress.acl_ingress.forward");
+    public static final PiActionId INGRESS_ROUTING_SET_NEXTHOP_ID =
+            PiActionId.of("ingress.routing.set_nexthop_id");
     public static final PiActionId INGRESS_ROUTING_SET_PORT_AND_SRC_MAC =
             PiActionId.of("ingress.routing.set_port_and_src_mac");
     public static final PiActionId INGRESS_ROUTING_SET_DST_MAC =
