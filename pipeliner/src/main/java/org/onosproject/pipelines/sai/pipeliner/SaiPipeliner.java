@@ -121,7 +121,7 @@ public class SaiPipeliner extends AbstractSaiHandlerBehavior implements Pipeline
 
     @Override
     public void purgeAll(ApplicationId appId) {
-        // We just push flow rule in SAI Pipeliner
+        // We only push flow rule in SAI Pipeliner
         flowRuleService.purgeFlowRules(deviceId, appId);
     }
 
