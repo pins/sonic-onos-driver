@@ -111,7 +111,7 @@ public final class SaiConstants {
     public static final PiActionId INGRESS_HASHING_COMPUTE_ECMP_HASH_IPV4 =
             PiActionId.of("ingress.hashing.compute_ecmp_hash_ipv4");
     public static final PiActionId INGRESS_ACL_INGRESS_COPY =
-            PiActionId.of("ingress.acl_ingress.copy");
+            PiActionId.of("ingress.acl_ingress.acl_copy");
     public static final PiActionId INGRESS_ROUTING_DROP =
             PiActionId.of("ingress.routing.drop");
     public static final PiActionId INGRESS_ROUTING_SET_NEXTHOP =
@@ -119,14 +119,14 @@ public final class SaiConstants {
     public static final PiActionId INGRESS_L3_ADMIT_ADMIT_TO_L3 =
             PiActionId.of("ingress.l3_admit.admit_to_l3");
     public static final PiActionId INGRESS_ACL_INGRESS_MIRROR =
-            PiActionId.of("ingress.acl_ingress.mirror");
+            PiActionId.of("ingress.acl_ingress.acl_mirror");
     public static final PiActionId NO_ACTION = PiActionId.of("NoAction");
     public static final PiActionId INGRESS_ROUTING_SET_WCMP_GROUP_ID =
             PiActionId.of("ingress.routing.set_wcmp_group_id");
     public static final PiActionId INGRESS_HASHING_SELECT_ECMP_HASH_ALGORITHM =
             PiActionId.of("ingress.hashing.select_ecmp_hash_algorithm");
     public static final PiActionId INGRESS_ACL_INGRESS_FORWARD =
-            PiActionId.of("ingress.acl_ingress.forward");
+            PiActionId.of("ingress.acl_ingress.acl_forward");
     public static final PiActionId INGRESS_ROUTING_SET_NEXTHOP_ID =
             PiActionId.of("ingress.routing.set_nexthop_id");
     public static final PiActionId INGRESS_ROUTING_SET_PORT_AND_SRC_MAC =
@@ -136,7 +136,7 @@ public final class SaiConstants {
     public static final PiActionId INGRESS_MIRRORING_CLONE_MIRROR_AS_IPV4_ERSPAN =
             PiActionId.of("ingress.mirroring_clone.mirror_as_ipv4_erspan");
     public static final PiActionId INGRESS_ACL_INGRESS_TRAP =
-            PiActionId.of("ingress.acl_ingress.trap");
+            PiActionId.of("ingress.acl_ingress.acl_trap");
     // Action Param IDs
     public static final PiActionParamId DST_MAC = PiActionParamId.of("dst_mac");
     public static final PiActionParamId NEXTHOP_ID =

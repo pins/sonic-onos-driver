@@ -583,8 +583,8 @@ actions {
 actions {
   preamble {
     id: 16777473
-    name: "ingress.acl_ingress.copy"
-    alias: "copy"
+    name: "ingress.acl_ingress.acl_copy"
+    alias: "acl_copy"
     annotations: "@sai_action(SAI_PACKET_ACTION_COPY)"
   }
   params {
@@ -599,8 +599,8 @@ actions {
 actions {
   preamble {
     id: 16777474
-    name: "ingress.acl_ingress.trap"
-    alias: "trap"
+    name: "ingress.acl_ingress.acl_trap"
+    alias: "acl_trap"
     annotations: "@sai_action(SAI_PACKET_ACTION_TRAP)"
   }
   params {
@@ -615,16 +615,16 @@ actions {
 actions {
   preamble {
     id: 16777475
-    name: "ingress.acl_ingress.forward"
-    alias: "forward"
+    name: "ingress.acl_ingress.acl_forward"
+    alias: "acl_forward"
     annotations: "@sai_action(SAI_PACKET_ACTION_FORWARD)"
   }
 }
 actions {
   preamble {
     id: 16777476
-    name: "ingress.acl_ingress.mirror"
-    alias: "mirror"
+    name: "ingress.acl_ingress.acl_mirror"
+    alias: "acl_mirror"
     annotations: "@sai_action(SAI_PACKET_ACTION_FORWARD)"
   }
   params {

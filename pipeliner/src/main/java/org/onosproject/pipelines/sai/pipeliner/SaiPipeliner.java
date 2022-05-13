@@ -110,11 +110,6 @@ public class SaiPipeliner extends AbstractSaiHandlerBehavior implements Pipeline
 
     @Override
     public void next(NextObjective obj) {
-        if (obj.op() == Objective.Operation.MODIFY) {
-            log.error("Operation {} is unsupported in SAI pipeliner", obj.op());
-            fail(obj, ObjectiveError.UNSUPPORTED);
-            return;
-        }
         final ObjectiveTranslation result = nextTranslator.translate(obj);
         handleResult(obj, result);
     }
@@ -232,6 +227,7 @@ public class SaiPipeliner extends AbstractSaiHandlerBehavior implements Pipeline
                 //  neighbor/interface/nexthop entries are in the store?
                 removeNextGroup(obj);
                 break;
+            case MODIFY:
             case ADD:
                 // TODO (daniele): what happens if a next objective is added when it's already present?
                 //  should, the NextObjectiveTranslator, be sure that this is not happening?
@@ -243,7 +239,6 @@ public class SaiPipeliner extends AbstractSaiHandlerBehavior implements Pipeline
             case REMOVE_FROM_EXISTING:
                 // ADD_TO_EXISITNG and REMOVE_FROM_EXISTING are managed
                 // directly into the NextObjectiveTranslator.
-            case MODIFY:
             case VERIFY:
                 break;
             default:
